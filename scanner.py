@@ -1,37 +1,61 @@
 """
-Swing scanner: a free Finviz-style screen for small tech names waking up.
-Finds candidates, builds an entry/stop/target and share size for each,
-and sends them to your phone via Telegram (or prints them).
+Swing scanner: finds small tech stocks breaking out early, builds the trade
+(entry, stop, target, breakeven trigger, share size), texts it to Telegram,
+updates the dashboard, and keeps a scorecard of how past alerts played out.
 
-It does NOT place orders. You review the alert and place the trade yourself.
+It does NOT place orders. You review the alert and decide.
 """
 import os
 import json
 import math
-from datetime import datetime
+from datetime import datetime, date, timedelta
 from zoneinfo import ZoneInfo
+
 import requests
 import pandas as pd
 import yfinance as yf
 
-# ---------- Your rules ----------
-ACCOUNT = 243.00          # account value in $
+# ---------- Your account ----------
+ACCOUNT = 243.00          # account value in $ (update as it grows)
 RISK_PCT = 2.0            # max $ risk per trade, as % of account
 MAX_POSITION_PCT = 40.0   # never put more than this % of the account in one stock
+
+# ---------- Stock filters ----------
 MIN_PRICE, MAX_PRICE = 2.0, 20.0
 MIN_AVG_VOLUME = 500_000
-MIN_REL_VOLUME = 1.5      # today's volume vs 20-day average (partial day counts low, so 1.5 midday ~ 2+ by close)
-MAX_STOP_PCT = 12.0       # stop can't be further than this below entry
-REWARD_RISK = 2.0         # target = entry + 2x the risk
+MIN_REL_VOLUME = 1.5      # today's volume vs 20-day average (partial day counts low)
 SECTORS = {"Technology", "Communication Services"}
+
+# Early-stage filters: catch the breakout, not the spike
+MIN_DAY_GAIN, MAX_DAY_GAIN = 2.0, 12.0   # % move today
+MAX_5DAY_GAIN = 20.0       # skip if already up more than this over 5 days
+MAX_ABOVE_SMA20 = 15.0     # skip if price is stretched this % above its 20-day average
+BREAKOUT_BUFFER = 3.0      # price must be within this % of (or above) the prior 20-day high
+
+# ---------- Trade plan ----------
+MAX_STOP_PCT = 10.0       # skip setups whose natural stop is further than this below entry
+REWARD_RISK = 2.0         # target = entry + 2x the risk
 TOP_N = 5
 
-# Yahoo's built-in screens used to build the universe each run
+# ---------- Safety filters ----------
+MARKET_TICKER = "QQQ"     # Nasdaq 100 fund; market is "healthy" when above its 50-day average
+EARNINGS_DAYS = 7         # skip stocks reporting earnings within this many days
+
+# ---------- Scorecard ----------
+FILL_WINDOW_DAYS = 1      # buy-stop must trigger within this many trading days, or it's "no fill"
+MAX_HOLD_DAYS = 15        # trading days before an open trade is closed as "timeout"
+
 YAHOO_SCREENS = ["small_cap_gainers", "aggressive_small_caps",
                  "growth_technology_stocks", "most_actives"]
-EXTRA_TICKERS_FILE = "watchlist.txt"   # one ticker per line, always scanned
+EXTRA_TICKERS_FILE = "watchlist.txt"
+DATA_FILE = "docs/data.json"
+HISTORY_KEEP = 60
+TRACK_KEEP = 300
+
+ET = ZoneInfo("America/New_York")
 
 
+# ================= Universe & data =================
 def build_universe():
     tickers = set()
     for name in YAHOO_SCREENS:
@@ -43,10 +67,40 @@ def build_universe():
     if os.path.exists(EXTRA_TICKERS_FILE):
         with open(EXTRA_TICKERS_FILE) as f:
             tickers.update(l.strip().upper() for l in f if l.strip() and not l.startswith("#"))
-    # US common stocks only (skip ADRs with dots, warrants, units)
     return sorted(t for t in tickers if t.isalpha() and len(t) <= 5)
 
 
+def download(tickers):
+    if not tickers:
+        return {}
+    data = yf.download(sorted(tickers), period="6mo", interval="1d", group_by="ticker",
+                       auto_adjust=True, threads=True, progress=False)
+    out = {}
+    for t in tickers:
+        try:
+            df = data[t] if len(tickers) > 1 else data
+            df = df.dropna()
+            if len(df):
+                out[t] = df
+        except Exception:
+            pass
+    return out
+
+
+# ================= Market filter =================
+def market_status(frames):
+    df = frames.get(MARKET_TICKER)
+    if df is None or len(df) < 50:
+        return {"ok": True, "note": "Market check unavailable"}
+    price = float(df["Close"].iloc[-1])
+    sma50 = float(df["Close"].iloc[-50:].mean())
+    ok = price > sma50
+    pct = (price / sma50 - 1) * 100
+    word = "healthy" if ok else "weak"
+    return {"ok": ok, "note": f"Market {word}: {MARKET_TICKER} {pct:+.1f}% vs its 50-day average"}
+
+
+# ================= Setup logic =================
 def setup_for(df):
     """df: daily OHLCV for one ticker, oldest first. Returns a setup dict or None."""
     df = df.dropna()
@@ -59,78 +113,177 @@ def setup_for(df):
         return None
     rvol = float(vol.iloc[-1]) / avg_vol
     sma50 = float(close.iloc[-50:].mean())
+    sma20 = float(close.iloc[-20:].mean())
     change = price / float(close.iloc[-2]) - 1
+    gain_5d = price / float(close.iloc[-6]) - 1
+    prior_high = float(high.iloc[-21:-1].max())
 
     if not (MIN_PRICE <= price <= MAX_PRICE): return None
     if avg_vol < MIN_AVG_VOLUME: return None
     if rvol < MIN_REL_VOLUME: return None
-    if price <= sma50 or change <= 0: return None
+    if price <= sma50: return None
+    if not (MIN_DAY_GAIN <= change * 100 <= MAX_DAY_GAIN): return None
+    if gain_5d * 100 > MAX_5DAY_GAIN: return None
+    if (price / sma20 - 1) * 100 > MAX_ABOVE_SMA20: return None
+    if price < prior_high * (1 - BREAKOUT_BUFFER / 100): return None
 
-    entry = round(float(high.iloc[-1]) + 0.01, 2)             # buy-stop just above today's high
-    swing_low = float(low.iloc[-5:].min()) - 0.01             # below the last 5 days' low
-    stop = round(max(swing_low, entry * (1 - MAX_STOP_PCT / 100)), 2)
-    if stop >= entry:
+    entry = round(float(high.iloc[-1]) + 0.01, 2)
+    stop = round(float(low.iloc[-5:].min()) - 0.01, 2)
+    if stop >= entry or (entry - stop) / entry * 100 > MAX_STOP_PCT:
         return None
     risk_ps = entry - stop
     target = round(entry + REWARD_RISK * risk_ps, 2)
+    breakeven = round(entry + (target - entry) / 2, 2)   # halfway: move stop up to entry here
 
     risk_budget = ACCOUNT * RISK_PCT / 100
-    max_cost = ACCOUNT * MAX_POSITION_PCT / 100
-    shares = math.floor(min(risk_budget / risk_ps, max_cost / entry))
+    shares = math.floor(min(risk_budget / risk_ps, ACCOUNT * MAX_POSITION_PCT / 100 / entry))
     if shares < 1:
         return None
     return dict(price=price, change=change * 100, rvol=rvol, entry=entry, stop=stop,
-                target=target, shares=shares, cost=shares * entry,
+                target=target, breakeven=breakeven, shares=shares, cost=shares * entry,
                 risk=shares * risk_ps, reward=shares * (target - entry),
                 stop_pct=risk_ps / entry * 100)
 
 
-def scan():
-    universe = build_universe()
-    print(f"Scanning {len(universe)} tickers")
-    if not universe:
-        return []
-    data = yf.download(universe, period="6mo", interval="1d", group_by="ticker",
-                       auto_adjust=True, threads=True, progress=False)
+def earnings_within(tk, days):
+    """Returns (date_str or None, True if within `days`)."""
+    try:
+        cal = tk.calendar
+        dates = cal.get("Earnings Date") if isinstance(cal, dict) else None
+        if not dates:
+            return None, False
+        d = dates[0]
+        if isinstance(d, datetime):
+            d = d.date()
+        today = datetime.now(ET).date()
+        return d.isoformat(), 0 <= (d - today).days <= days
+    except Exception:
+        return None, False
+
+
+def find_setups(frames):
     found = []
-    for t in universe:
+    for t, df in frames.items():
+        if t == MARKET_TICKER:
+            continue
         try:
-            df = data[t] if len(universe) > 1 else data
             s = setup_for(df)
         except Exception:
-            continue
+            s = None
         if s:
             s["ticker"] = t
             found.append(s)
     found.sort(key=lambda s: s["rvol"], reverse=True)
 
-    picks = []
-    for s in found:                      # sector check only on the few that passed
+    picks, skipped = [], []
+    for s in found:
         try:
-            info = yf.Ticker(s["ticker"]).info
-            s["sector"] = info.get("sector", "")
-            s["name"] = info.get("shortName", s["ticker"])
+            tk = yf.Ticker(s["ticker"])
+            info = tk.info
         except Exception:
             continue
-        if s["sector"] in SECTORS:
-            picks.append(s)
+        s["sector"] = info.get("sector", "")
+        s["name"] = info.get("shortName", s["ticker"])
+        if s["sector"] not in SECTORS:
+            continue
+        s["earnings"], soon = earnings_within(tk, EARNINGS_DAYS)
+        if soon:
+            skipped.append(f"{s['ticker']} (earnings {s['earnings']})")
+            continue
+        s["news"] = f"https://finance.yahoo.com/quote/{s['ticker']}/news"
+        picks.append(s)
         if len(picks) >= TOP_N:
             break
-    return picks
+    return picks, skipped
 
 
-def format_alert(picks):
+# ================= Scorecard =================
+def update_scorecard(tracked, frames):
+    """Replays each tracked alert against daily prices after its alert date."""
+    for a in tracked:
+        if a["status"] not in ("waiting", "open"):
+            continue
+        df = frames.get(a["ticker"])
+        if df is None:
+            continue
+        bars = df[df.index.date > date.fromisoformat(a["date"])]
+        entry, stop0, target, be = a["entry"], a["stop"], a["target"], a["breakeven"]
+        fill = a.get("fill")
+        stop = a.get("live_stop", stop0)
+        days_in = 0
+        for i, (idx, b) in enumerate(bars.iterrows()):
+            o, h, l, c = float(b["Open"]), float(b["High"]), float(b["Low"]), float(b["Close"])
+            d = idx.date().isoformat()
+            if fill is None:
+                if i >= FILL_WINDOW_DAYS:
+                    a["status"] = "no_fill"
+                    break
+                if h < entry:
+                    continue
+                fill = max(o, entry)            # gapped up = filled at the open
+                a.update(fill=round(fill, 2), filled=d, status="open")
+            days_in += 1
+            risk = fill - stop0
+            # conservative: if stop and target both touched the same day, count the stop
+            if l <= stop:
+                exit_px = min(o, stop) if o < stop else stop
+                a.update(status="loss" if exit_px < fill - 0.005 else "breakeven",
+                         exit=round(exit_px, 2), closed=d)
+                break
+            if h >= target:
+                a.update(status="win", exit=round(max(o, target), 2), closed=d)
+                break
+            if h >= be and stop < fill:
+                stop = fill                     # breakeven rule
+                a["live_stop"] = round(stop, 2)
+            if days_in >= MAX_HOLD_DAYS:
+                a.update(status="timeout", exit=round(c, 2), closed=d)
+                break
+        if a.get("exit") is not None and a.get("fill"):
+            a["r"] = round((a["exit"] - a["fill"]) / (a["fill"] - a["stop"]), 2)
+    return tracked
+
+
+def scorecard_summary(tracked):
+    done = [a for a in tracked if a["status"] in ("win", "loss", "breakeven", "timeout")]
+    wins = [a for a in done if a.get("r", 0) > 0]
+    avg_r = sum(a.get("r", 0) for a in done) / len(done) if done else 0
+    return {
+        "alerts": len(tracked),
+        "filled": len([a for a in tracked if a.get("fill")]),
+        "closed": len(done),
+        "wins": len(wins),
+        "win_rate": round(len(wins) / len(done) * 100) if done else None,
+        "avg_r": round(avg_r, 2),
+        "per_trade": round(avg_r * ACCOUNT * RISK_PCT / 100, 2),
+        "open": len([a for a in tracked if a["status"] == "open"]),
+        "waiting": len([a for a in tracked if a["status"] == "waiting"]),
+    }
+
+
+# ================= Alerts =================
+def format_alert(picks, market, skipped):
+    risk = ACCOUNT * RISK_PCT / 100
+    head = f"Swing scan  |  risk ${risk:.2f}/trade\n{market['note']}"
+    if not market["ok"]:
+        return (head + "\n\nSitting out: breakouts fail more often when the market is "
+                "below its 50-day average. No trades today.")
     if not picks:
-        return "Swing scan: no setups passed your rules today. No trade is a fine trade."
-    lines = [f"Swing scan: {len(picks)} setup(s)  |  risk ${ACCOUNT*RISK_PCT/100:.2f}/trade\n"]
-    for s in picks:
-        lines.append(
-            f"{s['ticker']} ({s['name']}) ${s['price']:.2f}, +{s['change']:.1f}%, {s['rvol']:.1f}x vol\n"
-            f"  Buy-stop {s['entry']:.2f} | Stop {s['stop']:.2f} (-{s['stop_pct']:.1f}%) | Target {s['target']:.2f}\n"
-            f"  {s['shares']} sh = ${s['cost']:.2f} | risk ${s['risk']:.2f} | reward ${s['reward']:.2f}\n"
-            f"  Check the news before you buy."
-        )
-    return "\n".join(lines)
+        msg = head + "\n\nNo setups passed your rules. No trade is a fine trade."
+    else:
+        lines = [head + f"\n\n{len(picks)} setup(s):\n"]
+        for s in picks:
+            earn = f" | earnings {s['earnings']}" if s.get("earnings") else ""
+            lines.append(
+                f"{s['ticker']} ({s['name']}) ${s['price']:.2f}, +{s['change']:.1f}%, {s['rvol']:.1f}x vol{earn}\n"
+                f"  Buy-stop {s['entry']:.2f} | Stop {s['stop']:.2f} (-{s['stop_pct']:.1f}%) | Target {s['target']:.2f}\n"
+                f"  Move stop to {s['entry']:.2f} once price hits {s['breakeven']:.2f}\n"
+                f"  {s['shares']} sh = ${s['cost']:.2f} | risk ${s['risk']:.2f} | reward ${s['reward']:.2f}\n"
+                f"  News: {s['news']}\n")
+        msg = "\n".join(lines)
+    if skipped:
+        msg += "\nSkipped for earnings soon: " + ", ".join(skipped)
+    return msg
 
 
 def send(text):
@@ -138,31 +291,66 @@ def send(text):
     print(text)
     if token and chat:
         r = requests.post(f"https://api.telegram.org/bot{token}/sendMessage",
-                          data={"chat_id": chat, "text": text}, timeout=20)
+                          data={"chat_id": chat, "text": text,
+                                "disable_web_page_preview": "true"}, timeout=20)
         print("Telegram:", r.status_code)
 
 
-DATA_FILE = "docs/data.json"
-HISTORY_KEEP = 60   # scans kept on the dashboard (~6 weeks at 2 a day)
-
-
-def save_dashboard(picks):
-    """Write the results the dashboard page reads. Runs every scan."""
+# ================= Dashboard data =================
+def load_data():
     try:
         with open(DATA_FILE) as f:
-            data = json.load(f)
+            return json.load(f)
     except Exception:
-        data = {"history": []}
-    now = datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M ET")
-    clean = [{k: (round(v, 2) if isinstance(v, float) else v) for k, v in p.items()} for p in picks]
-    data.update(updated=now, account=ACCOUNT, risk_pct=RISK_PCT, latest=clean)
-    data["history"] = ([{"date": now, "picks": clean}] + data.get("history", []))[:HISTORY_KEEP]
+        return {}
+
+
+def save_data(data):
     os.makedirs(os.path.dirname(DATA_FILE), exist_ok=True)
     with open(DATA_FILE, "w") as f:
         json.dump(data, f, indent=1)
 
 
+def clean(d):
+    return {k: (round(v, 2) if isinstance(v, float) else v) for k, v in d.items()}
+
+
+def main():
+    data = load_data()
+    tracked = data.get("tracked", [])
+
+    universe = build_universe()
+    active = {a["ticker"] for a in tracked if a["status"] in ("waiting", "open")}
+    print(f"Scanning {len(universe)} tickers, tracking {len(active)}")
+    frames = download(set(universe) | active | {MARKET_TICKER})
+
+    market = market_status(frames)
+    tracked = update_scorecard(tracked, frames)
+
+    picks, skipped = find_setups({t: frames[t] for t in universe if t in frames})
+    picks = [clean(p) for p in picks]
+
+    now = datetime.now(ET)
+    today = now.date().isoformat()
+    for p in picks:            # every alert joins the scorecard, even on weak-market days
+        if p["ticker"] in active:
+            continue
+        tracked.append({"ticker": p["ticker"], "date": today, "entry": p["entry"],
+                        "stop": p["stop"], "target": p["target"], "breakeven": p["breakeven"],
+                        "market_ok": market["ok"], "status": "waiting"})
+        active.add(p["ticker"])
+    tracked = tracked[-TRACK_KEEP:]
+
+    stamp = now.strftime("%Y-%m-%d %H:%M ET")
+    shown = picks if market["ok"] else []
+    data.update(updated=stamp, account=ACCOUNT, risk_pct=RISK_PCT, market=market,
+                latest=shown, skipped=skipped, tracked=tracked,
+                scorecard=scorecard_summary(tracked))
+    data["history"] = ([{"date": stamp, "picks": shown}] + data.get("history", []))[:HISTORY_KEEP]
+    save_data(data)
+
+    send(format_alert(picks, market, skipped))
+
+
 if __name__ == "__main__":
-    picks = scan()
-    save_dashboard(picks)
-    send(format_alert(picks))
+    main()
