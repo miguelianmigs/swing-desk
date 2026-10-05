@@ -1,12 +1,12 @@
 {
- "updated": "2026-10-05 12:24 ET",
+ "updated": "2026-10-05 12:35 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [
   {
    "price": 11.91,
-   "change": 24.76,
-   "rvol": 3.67,
+   "change": 24.68,
+   "rvol": 3.73,
    "entry": 12.07,
    "stop": 10.62,
    "target": 14.97,
@@ -20,9 +20,9 @@
    "name": "StoneCo Ltd."
   },
   {
-   "price": 11.06,
-   "change": 22.67,
-   "rvol": 3.34,
+   "price": 11.1,
+   "change": 23.0,
+   "rvol": 3.44,
    "entry": 11.2,
    "stop": 9.86,
    "target": 13.88,
@@ -37,6 +37,43 @@
   }
  ],
  "history": [
+  {
+   "date": "2026-10-05 12:35 ET",
+   "picks": [
+    {
+     "price": 11.91,
+     "change": 24.68,
+     "rvol": 3.73,
+     "entry": 12.07,
+     "stop": 10.62,
+     "target": 14.97,
+     "shares": 3,
+     "cost": 36.21,
+     "risk": 4.35,
+     "reward": 8.7,
+     "stop_pct": 12.01,
+     "ticker": "STNE",
+     "sector": "Technology",
+     "name": "StoneCo Ltd."
+    },
+    {
+     "price": 11.1,
+     "change": 23.0,
+     "rvol": 3.44,
+     "entry": 11.2,
+     "stop": 9.86,
+     "target": 13.88,
+     "shares": 3,
+     "cost": 33.6,
+     "risk": 4.02,
+     "reward": 8.04,
+     "stop_pct": 11.96,
+     "ticker": "PAGS",
+     "sector": "Technology",
+     "name": "PagSeguro Digital Ltd."
+    }
+   ]
+  },
   {
    "date": "2026-10-05 12:24 ET",
    "picks": [
