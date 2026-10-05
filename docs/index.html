@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Swing desk</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#E9EDF1;--panel:#F7F9FB;--ink:#17202B;--muted:#5A6676;--line:#C9D1DA;--gain:#17805F;--loss:#B9392F;--target:#C98516;--entry:#2E5BBA;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#121821;--panel:#1A222D;--ink:#E6EBF1;--muted:#93A0B0;--line:#2E3946;--gain:#3DBB8C;--loss:#E8665B;--target:#E9AE4A;--entry:#7EA2F0}}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Archivo",system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px}
+h1{font-stretch:75%;font-weight:800;font-size:2.6rem;line-height:1;margin:8px 0 4px}
+h2{font-stretch:85%;font-weight:700;font-size:1.25rem;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 20px;font-size:.95rem}
+.hint{color:var(--muted);font-size:.85rem;margin:0 0 12px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:18px}
+.stat{background:var(--panel);padding:12px}.stat b{display:block;font-size:1.3rem;font-stretch:85%}.stat span{color:var(--muted);font-size:.8rem}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.full{grid-column:1/-1}
+label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px}
+input{width:100%;font:inherit;font-size:1rem;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--entry);outline-offset:2px}
+.settings{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}.settings>div{flex:1 1 140px}
+button{font:inherit;font-weight:600;border-radius:8px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:10px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border-color:var(--line)}button.small{padding:6px 10px;font-size:.85rem}
+button:disabled{opacity:.4;cursor:not-allowed}
+.actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.setup{border-top:1px solid var(--line);padding:14px 0}.setup:first-of-type{border-top:0}
+.setup .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.lv{display:flex;gap:14px;flex-wrap:wrap;font-size:.92rem;margin:6px 0}
+.lv .e{color:var(--entry)}.lv .s{color:var(--loss)}.lv .t{color:var(--target)}
+.ladder{position:relative;height:150px;margin:18px 0 6px;border-left:2px solid var(--line)}
+.zone{position:absolute;left:0;right:0}.zone.win{background:color-mix(in srgb,var(--gain) 14%,transparent)}.zone.risk{background:color-mix(in srgb,var(--loss) 14%,transparent)}
+.lvl{position:absolute;left:0;right:0;border-top:2px solid;display:flex;justify-content:space-between;font-size:.85rem;padding:2px 6px 0 10px}
+.lvl.t{border-color:var(--target);color:var(--target)}.lvl.e{border-color:var(--entry);color:var(--entry)}.lvl.s{border-color:var(--loss);color:var(--loss)}
+.calc{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}.calc div{border-top:1px solid var(--line);padding-top:8px}
+.calc b{display:block;font-size:1.15rem}.calc span{font-size:.8rem;color:var(--muted)}
+.checks{list-style:none;padding:0;margin:14px 0 0;font-size:.9rem}.checks li{padding:3px 0}
+.checks .ok::before{content:"✓ ";color:var(--gain);font-weight:700}.checks .bad{color:var(--loss)}.checks .bad::before{content:"✗ ";font-weight:700}
+.empty{color:var(--muted);font-size:.92rem;margin:0}
+.row{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0}
+.tk{font-weight:800;font-stretch:80%;font-size:1.1rem}.meta{color:var(--muted);font-size:.85rem}
+.pos{color:var(--gain)}.neg{color:var(--loss)}.btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+details summary{cursor:pointer;font-weight:600;padding:6px 0}
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Swing desk</h1>
+  <p class="sub" id="updated">Loading today's scan…</p>
+  <div class="stats" id="stats"></div>
+
+  <section aria-labelledby="scanH">
+    <h2 id="scanH">Today's setups</h2>
+    <p class="hint">Found by the scanner. Check the news, then tap Plan to size it.</p>
+    <div id="scan"></div>
+  </section>
+
+  <div class="settings">
+    <div><label for="startCash">Starting cash ($)</label><input id="startCash" type="number" step="0.01" inputmode="decimal"></div>
+    <div><label for="riskPct">Risk per trade (%)</label><input id="riskPct" type="number" step="0.5" min="0.5" max="5" inputmode="decimal"></div>
+    <div><label for="maxPos">Max open positions</label><input id="maxPos" type="number" min="1" max="6" inputmode="numeric"></div>
+  </div>
+
+  <section aria-labelledby="planH">
+    <h2 id="planH">Plan a trade</h2>
+    <div class="grid" style="margin-top:12px">
+      <div><label for="tk">Ticker</label><input id="tk" autocapitalize="characters"></div>
+      <div><label for="entry">Entry ($)</label><input id="entry" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label for="stop">Stop-loss ($)</label><input id="stop" type="number" step="0.01" inputmode="decimal"></div>
+      <div><label for="target">Target ($)</label><input id="target" type="number" step="0.01" inputmode="decimal"></div>
+      <div class="full"><label for="why">Why this trade</label><input id="why" placeholder="Catalyst, news story, setup"></div>
+    </div>
+    <div id="ladder"></div><div class="calc" id="calc"></div><ul class="checks" id="checks"></ul>
+    <div class="actions"><button id="addWatch" class="ghost">Add to watchlist</button><button id="openNow">Open trade</button></div>
+  </section>
+
+  <section aria-labelledby="watchH"><h2 id="watchH">Watchlist</h2><div id="watch"></div></section>
+  <section aria-labelledby="openH"><h2 id="openH">Open positions</h2><div id="open"></div></section>
+  <section aria-labelledby="logH"><h2 id="logH">Trade log</h2><div id="log"></div></section>
+  <section aria-labelledby="histH"><h2 id="histH">Past scans</h2><div id="hist"></div></section>
+  <p class="meta">Your trades are saved on this device only. <button class="small ghost" id="export">Export backup</button> <button class="small ghost" id="import">Import backup</button></p>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?"-$":"$")+Math.abs(n).toFixed(2);
+const fmtP=n=>(+n).toFixed(n>=1?2:4);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const KEY="swingdesk";
+let S={startCash:243,riskPct:2,maxPos:3,watch:[],open:[],closed:[]};
+try{const o=JSON.parse(localStorage.getItem(KEY)||"null");if(o)S={...S,...o}}catch(_){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}};
+function toast(m){const t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("on"),2000)}
+const realized=()=>S.closed.reduce((a,t)=>a+t.pl,0);
+const equity=()=>S.startCash+realized();
+const cashFree=()=>equity()-S.open.reduce((a,t)=>a+t.shares*t.entry,0);
+const today=()=>new Date().toLocaleDateString(undefined,{month:"short",day:"numeric"});
+
+function plan(){
+  const tk=$("tk").value.trim().toUpperCase(),e=+$("entry").value,s=+$("stop").value,t=+$("target").value;
+  const riskBudget=equity()*S.riskPct/100,rps=e-s,rr=rps>0?(t-e)/rps:0,free=Math.max(cashFree(),0);
+  let shares=rps>0?Math.floor(riskBudget/rps):0;const capped=shares*e>free;if(capped)shares=e>0?Math.floor(free/e):0;
+  return{tk,e,s,t,rps,rr,shares,cost:shares*e,risk:shares*rps,reward:shares*(t-e),riskBudget,capped,valid:!!tk&&e>0&&s>0&&t>0&&s<e&&t>e};
+}
+function renderPlan(){
+  const p=plan();
+  if(p.valid){const hi=p.t,lo=p.s,y=v=>(hi-v)/(hi-lo)*130+4;
+    $("ladder").innerHTML=`<div class="ladder" aria-hidden="true"><div class="zone win" style="top:${y(p.t)}px;height:${y(p.e)-y(p.t)}px"></div><div class="zone risk" style="top:${y(p.e)}px;height:${y(p.s)-y(p.e)}px"></div>
+      <div class="lvl t" style="top:${y(p.t)}px"><span>Target</span><span>$${fmtP(p.t)} · +${((p.t/p.e-1)*100).toFixed(1)}%</span></div>
+      <div class="lvl e" style="top:${y(p.e)}px"><span>Entry</span><span>$${fmtP(p.e)}</span></div>
+      <div class="lvl s" style="top:${y(p.s)-20}px;border-top:0;border-bottom:2px solid"><span>Stop</span><span>$${fmtP(p.s)} · ${((p.s/p.e-1)*100).toFixed(1)}%</span></div></div>`;
+  }else $("ladder").innerHTML="";
+  $("calc").innerHTML=p.valid?`<div><b>${p.shares}</b><span>shares</span></div><div><b>${fmt(p.cost)}</b><span>position size</span></div><div><b>${p.rr.toFixed(1)} : 1</b><span>reward to risk</span></div>
+    <div><b class="neg">${fmt(-p.risk)}</b><span>if stopped out</span></div><div><b class="pos">${fmt(p.reward)}</b><span>if target hits</span></div><div><b>${fmt(p.riskBudget)}</b><span>max risk (${S.riskPct}%)</span></div>`
+    :`<p class="empty" style="grid-column:1/-1">Tap Plan on a setup above, or enter your own: a stop below entry and a target above it.</p>`;
+  const c=p.valid?[[p.e>=1,"Price is $1 or more"],[p.rr>=2,"Target is at least 2× the risk"],[(p.e-p.s)/p.e<=.12,"Stop is within 12% of entry"],
+    [S.open.length<S.maxPos,`Fewer than ${S.maxPos} positions open`],[!p.capped,p.capped?"Size cut to fit your free cash":"Fits in your free cash"],[$("why").value.trim().length>0,"Reason written down"]]:[];
+  $("checks").innerHTML=c.map(([ok,t])=>`<li class="${ok?"ok":"bad"}">${t}</li>`).join("");
+  $("openNow").disabled=!p.valid||p.shares<1||S.open.length>=S.maxPos;$("addWatch").disabled=!p.valid;
+}
+function renderStats(){const w=S.closed.filter(t=>t.pl>0).length;
+  $("stats").innerHTML=`<div class="stat"><b>${fmt(equity())}</b><span>account</span></div><div class="stat"><b>${fmt(cashFree())}</b><span>free cash</span></div>
+  <div class="stat"><b class="${realized()>=0?"pos":"neg"}">${fmt(realized())}</b><span>realized P/L</span></div><div class="stat"><b>${S.closed.length?Math.round(w/S.closed.length*100)+"%":"—"}</b><span>win rate (${S.closed.length})</span></div>`}
+function renderLists(){
+  $("watch").innerHTML=S.watch.length?S.watch.map((w,i)=>`<div class="row"><div><div class="tk">${esc(w.tk)}</div><div class="meta">Buy ${fmtP(w.e)} · stop ${fmtP(w.s)} · target ${fmtP(w.t)}${w.why?" · "+esc(w.why):""}</div></div>
+    <div class="btns"><button class="small ghost" data-act="load" data-i="${i}">Edit</button><button class="small ghost" data-act="rmw" data-i="${i}">Remove</button></div></div>`).join(""):`<p class="empty">No setups saved. Plan one and add it here while you wait for the entry.</p>`;
+  $("open").innerHTML=S.open.length?S.open.map((o,i)=>`<div class="row"><div><div class="tk">${esc(o.tk)} <span class="meta">${o.shares} sh @ ${fmtP(o.entry)}</span></div><div class="meta">Stop ${fmtP(o.s)} · target ${fmtP(o.t)} · opened ${o.date}</div></div>
+    <div class="btns"><button class="small" data-act="close" data-i="${i}">Close</button></div></div>`).join(""):`<p class="empty">Nothing open.</p>`;
+  $("log").innerHTML=S.closed.length?[...S.closed].reverse().map(c=>`<div class="row"><div><div class="tk">${esc(c.tk)} <span class="meta">${c.shares} sh</span></div><div class="meta">${fmtP(c.entry)} → ${fmtP(c.exit)} · ${c.opened} to ${c.date}${c.why?" · "+esc(c.why):""}</div></div>
+    <div class="${c.pl>=0?"pos":"neg"}" style="font-weight:700">${fmt(c.pl)}</div></div>`).join(""):`<p class="empty">Closed trades land here with their result.</p>`;
+}
+function render(){renderStats();renderPlan();renderLists()}
+function setupHtml(p,btn){return `<div class="setup"><div class="top"><span class="tk">${esc(p.ticker)} <span class="meta">${esc(p.name||"")}</span></span>
+  <span class="meta">$${fmtP(p.price)} · +${(+p.change).toFixed(1)}% · ${(+p.rvol).toFixed(1)}× vol</span></div>
+  <div class="lv"><span class="e">Buy ${fmtP(p.entry)}</span><span class="s">Stop ${fmtP(p.stop)}</span><span class="t">Target ${fmtP(p.target)}</span></div>
+  ${btn?`<button class="small" data-act="plan" data-tk="${esc(p.ticker)}" data-e="${p.entry}" data-s="${p.stop}" data-t="${p.target}">Plan</button>`:""}</div>`}
+async function loadScan(){
+  try{const r=await fetch("data.json?"+Date.now());const d=await r.json();
+    $("updated").textContent=d.updated?`Last scan ${d.updated}. Updates itself at 10:30 AM and 3:30 PM ET on market days.`:"Waiting for the first scan. Run it once from GitHub's Actions tab.";
+    $("scan").innerHTML=(d.latest||[]).length?d.latest.map(p=>setupHtml(p,true)).join(""):`<p class="empty">No setups passed your rules on the last scan. Sitting out is a position too.</p>`;
+    $("hist").innerHTML=(d.history||[]).slice(1).map(h=>`<details><summary>${esc(h.date)} · ${h.picks.length} setup${h.picks.length===1?"":"s"}</summary>${h.picks.map(p=>setupHtml(p,false)).join("")||'<p class="empty">None.</p>'}</details>`).join("")||`<p class="empty">Earlier scans will show here.</p>`;
+  }catch(e){$("updated").textContent="Couldn't load the scan file. Refresh in a moment.";$("scan").innerHTML=""}
+}
+function clearForm(){["tk","entry","stop","target","why"].forEach(id=>$(id).value="")}
+$("addWatch").onclick=()=>{const p=plan();if(!p.valid)return;S.watch.push({tk:p.tk,e:p.e,s:p.s,t:p.t,why:$("why").value.trim()});clearForm();save();render();toast(p.tk+" added to watchlist")};
+$("openNow").onclick=()=>{const p=plan();if(!p.valid||p.shares<1)return;S.open.push({tk:p.tk,entry:p.e,s:p.s,t:p.t,shares:p.shares,why:$("why").value.trim(),date:today()});
+  S.watch=S.watch.filter(w=>w.tk!==p.tk);clearForm();save();render();toast(p.tk+" opened")};
+document.addEventListener("click",ev=>{const b=ev.target.closest("button[data-act]");if(!b)return;const i=+b.dataset.i,a=b.dataset.act;
+  if(a==="plan"||a==="load"){const w=a==="plan"?{tk:b.dataset.tk,e:b.dataset.e,s:b.dataset.s,t:b.dataset.t,why:"Scanner setup"}:S.watch[i];
+    $("tk").value=w.tk;$("entry").value=w.e;$("stop").value=w.s;$("target").value=w.t;$("why").value=w.why||"";renderPlan();$("planH").scrollIntoView({behavior:"smooth"});return}
+  if(a==="rmw")S.watch.splice(i,1);
+  if(a==="close"){const o=S.open[i];const v=prompt(`Exit price for ${o.tk}?`,o.entry);if(v===null)return;const x=+v;if(!(x>0)){toast("Enter a price above 0");return}
+    S.closed.push({tk:o.tk,shares:o.shares,entry:o.entry,exit:x,pl:(x-o.entry)*o.shares,why:o.why,opened:o.date,date:today()});S.open.splice(i,1);toast(o.tk+" closed")}
+  save();render();});
+["tk","entry","stop","target","why"].forEach(id=>$(id).addEventListener("input",renderPlan));
+[["startCash","startCash"],["riskPct","riskPct"],["maxPos","maxPos"]].forEach(([id,k])=>{$(id).value=S[k];
+  $(id).addEventListener("change",()=>{const v=+$(id).value;if(v>0){S[k]=v;save();render()}else $(id).value=S[k]})});
+$("export").onclick=async()=>{const t=JSON.stringify(S);try{await navigator.clipboard.writeText(t);toast("Backup copied. Paste it somewhere safe.")}catch(_){prompt("Copy this backup:",t)}};
+$("import").onclick=()=>{const t=prompt("Paste your backup:");if(!t)return;try{S={...S,...JSON.parse(t)};save();render();["startCash","riskPct","maxPos"].forEach(k=>$(k).value=S[k]);toast("Backup restored")}catch(_){toast("That backup didn't read correctly")}};
+render();loadScan();
+</script>
+</body>
+</html>

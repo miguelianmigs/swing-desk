@@ -1,0 +1,3 @@
+# Tickers to always scan, one per line (add names from WSJ or news here)
+RGTI
+UROY
