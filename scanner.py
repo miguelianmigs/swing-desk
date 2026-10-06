@@ -45,6 +45,19 @@ EARNINGS_DAYS = 7         # skip stocks reporting earnings within this many days
 FILL_WINDOW_DAYS = 1      # buy-stop must trigger within this many trading days, or it's "no fill"
 MAX_HOLD_DAYS = 15        # trading days before an open trade is closed as "timeout"
 
+# ---------- Early-theme scan (weekly, Monday morning + any manual run) ----------
+THEMES_FILE = "themes.txt"
+THEME_BUCKET = 100.0       # $ set aside for early-catch bets
+THEME_BETS = 5             # split the bucket into this many starter positions
+THEME_MIN_PRICE, THEME_MAX_PRICE = 1.0, 5.0     # the "catch it under $5" zone
+THEME_MIN_MCAP = 150e6     # skip tiny shells: real companies only
+THEME_EXTRA_SCREENS = ["aggressive_small_caps", "small_cap_gainers", "undervalued_growth_stocks"]
+THEME_MIN_AVG_VOLUME = 200_000
+THEME_MAX_OFF_HIGH = 40.0  # must still be at least this % below its 1-year high (early, not extended)
+THEME_CROSS_DAYS = 10      # price reclaimed its 50-day average within this many days
+THEME_VOL_PICKUP = 1.3     # 10-day volume vs 60-day volume
+THEME_TOP_N = 5
+
 YAHOO_SCREENS = ["small_cap_gainers", "aggressive_small_caps",
                  "growth_technology_stocks", "most_actives"]
 EXTRA_TICKERS_FILE = "watchlist.txt"
@@ -261,6 +274,127 @@ def scorecard_summary(tracked):
     }
 
 
+# ================= Early-theme scan =================
+def load_themes():
+    themes = {}
+    if not os.path.exists(THEMES_FILE):
+        return themes
+    with open(THEMES_FILE) as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or ":" not in line:
+                continue
+            name, tickers = line.split(":", 1)
+            for t in tickers.split(","):
+                t = t.strip().upper()
+                if t.isalpha():
+                    themes[t] = name.strip()
+    return themes
+
+
+def theme_setup(df):
+    """Beaten-down stock turning up from a long base. Returns dict or None."""
+    df = df.dropna()
+    if len(df) < 120:
+        return None
+    close, low, vol = df["Close"], df["Low"], df["Volume"]
+    price = float(close.iloc[-1])
+    if not (THEME_MIN_PRICE <= price <= THEME_MAX_PRICE):
+        return None
+    if float(vol.iloc[-60:].mean()) < THEME_MIN_AVG_VOLUME:
+        return None
+    year_high = float(df["High"].max())
+    off_high = (1 - price / year_high) * 100
+    if off_high < THEME_MAX_OFF_HIGH:
+        return None                                    # already ran: not early anymore
+    sma50 = close.rolling(50).mean()
+    now_above = price > float(sma50.iloc[-1])
+    was_below = (close.iloc[-THEME_CROSS_DAYS - 1:-1] < sma50.iloc[-THEME_CROSS_DAYS - 1:-1]).any()
+    if not (now_above and was_below):
+        return None                                    # needs a fresh reclaim of the 50-day
+    if float(sma50.iloc[-1]) < float(sma50.iloc[-11]) * 0.98:
+        return None                                    # 50-day still falling hard
+    vol_pickup = float(vol.iloc[-10:].mean()) / float(vol.iloc[-60:].mean())
+    if vol_pickup < THEME_VOL_PICKUP:
+        return None                                    # no new buyers showing up
+    base_low = round(float(low.iloc[-60:].min()), 2)
+    return dict(price=round(price, 2), off_high=round(off_high, 1), vol_pickup=round(vol_pickup, 1),
+                base_low=base_low, cut_pct=round((1 - base_low / price) * 100, 1),
+                bet=round(THEME_BUCKET / THEME_BETS, 2))
+
+
+def run_theme_scan():
+    themes = load_themes()
+    for name in THEME_EXTRA_SCREENS:          # also hunt beyond your theme list
+        try:
+            res = yf.screen(name, count=100)
+            for q in res.get("quotes", []):
+                t = q.get("symbol", "")
+                if t.isalpha() and len(t) <= 5 and t not in themes:
+                    themes[t] = "Market-wide"
+        except Exception as e:
+            print(f"theme screen {name} failed: {e}")
+    if not themes:
+        return [], 0
+    data = yf.download(sorted(themes), period="1y", interval="1d", group_by="ticker",
+                       auto_adjust=True, threads=True, progress=False)
+    picks = []
+    for t, theme in themes.items():
+        try:
+            df = data[t] if len(themes) > 1 else data
+            s = theme_setup(df)
+        except Exception:
+            s = None
+        if s:
+            s.update(ticker=t, theme=theme,
+                     news=f"https://finance.yahoo.com/quote/{t}/news")
+            picks.append(s)
+    picks.sort(key=lambda p: (p["theme"] == "Market-wide", -p["vol_pickup"]))  # your themes first
+
+    final = []
+    for p in picks:                           # quality check only on the few that passed
+        try:
+            info = yf.Ticker(p["ticker"]).info
+        except Exception:
+            continue
+        mcap = info.get("marketCap") or 0
+        if mcap < THEME_MIN_MCAP:
+            continue
+        rev = info.get("totalRevenue") or 0
+        growth = info.get("revenueGrowth")
+        p.update(name=info.get("shortName", p["ticker"]), mcap=round(mcap / 1e6),
+                 revenue=round(rev / 1e6, 1),
+                 rev_growth=None if growth is None else round(growth * 100))
+        final.append(p)
+        if len(final) >= THEME_TOP_N:
+            break
+    return final, len(themes)
+
+
+def format_theme_alert(picks, checked):
+    head = (f"Early-catch scan (weekly)  |  {checked} names checked, under ${THEME_MAX_PRICE:.0f}\n"
+            f"Long-shot bucket: ${THEME_BUCKET:.0f}, about ${THEME_BUCKET/THEME_BETS:.0f} per bet\n")
+    if not picks:
+        return head + "\nNothing turning up from a base this week. Patience is the strategy."
+    lines = [head]
+    for p in picks:
+        growth = "" if p.get("rev_growth") is None else f" ({p['rev_growth']:+d}% yr/yr)"
+        lines.append(
+            f"{p['ticker']} ({p.get('name', p['ticker'])}, {p['theme']}) ${p['price']:.2f}\n"
+            f"  Size ${p.get('mcap', 0):,}M | revenue ${p.get('revenue', 0)}M{growth}\n"
+            f"  {p['off_high']:.0f}% below its 1-year high, just reclaimed its 50-day average\n"
+            f"  Volume {p['vol_pickup']:.1f}x normal over 10 days\n"
+            f"  Starter: ~${p['bet']:.0f} | Cut if it closes below {p['base_low']:.2f} (-{p['cut_pct']:.0f}%)\n"
+            f"  Hold for months if it works. News: {p['news']}\n")
+    return "\n".join(lines)
+
+
+def theme_scan_due(now):
+    if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        return True                                   # any manual run
+    return now.weekday() == 0 and now.hour < 12        # Monday morning scan
+
+
 # ================= Alerts =================
 def format_alert(picks, market, skipped):
     risk = ACCOUNT * RISK_PCT / 100
@@ -347,9 +481,20 @@ def main():
                 latest=shown, skipped=skipped, tracked=tracked,
                 scorecard=scorecard_summary(tracked))
     data["history"] = ([{"date": stamp, "picks": shown}] + data.get("history", []))[:HISTORY_KEEP]
+
+    theme_msg = None
+    if theme_scan_due(now):
+        try:
+            tpicks, checked = run_theme_scan()
+            data["theme"] = {"date": stamp, "checked": checked, "picks": tpicks}
+            theme_msg = format_theme_alert(tpicks, checked)
+        except Exception as e:
+            print("theme scan failed:", e)
     save_data(data)
 
     send(format_alert(picks, market, skipped))
+    if theme_msg:
+        send(theme_msg)
 
 
 if __name__ == "__main__":

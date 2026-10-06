@@ -72,6 +72,12 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
     <div id="scan"></div>
   </section>
 
+  <section aria-labelledby="themeH">
+    <h2 id="themeH">Early-catch picks</h2>
+    <p class="hint" id="themeHint">Weekly scan for stocks under $5 turning up from a long base, like RGTI, UROY and RYCEY were. Small bets, months-long holds.</p>
+    <div id="theme"></div>
+  </section>
+
   <div class="settings">
     <div><label for="startCash">Starting cash ($)</label><input id="startCash" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="riskPct">Risk per trade (%)</label><input id="riskPct" type="number" step="0.5" min="0.5" max="5" inputmode="decimal"></div>
@@ -166,6 +172,11 @@ async function loadScan(){
     $("tracked").innerHTML=(d.tracked||[]).slice(-25).reverse().map(a=>`<div class="row"><div><div class="tk">${esc(a.ticker)} <span class="meta">${esc(a.date)}${a.market_ok===false?" · weak market":""}</span></div>
       <div class="meta">Buy ${fmtP(a.entry)} · stop ${fmtP(a.stop)} · target ${fmtP(a.target)} · ${lbl[a.status]||a.status}</div></div>
       <div class="${(a.r||0)>0?"pos":(a.r||0)<0?"neg":"meta"}" style="font-weight:700">${a.r==null?"":(a.r>0?"+":"")+a.r+"R"}</div></div>`).join("")||'<p class="empty">No alerts tracked yet.</p>';
+    const th=d.theme;
+    $("theme").innerHTML=!th?'<p class="empty">First theme scan runs Monday morning, or on any manual run.</p>'
+      :(th.picks||[]).length?th.picks.map(p=>`<div class="setup"><div class="top"><span class="tk">${esc(p.ticker)} <span class="meta">${esc(p.name||"")} · ${esc(p.theme)}</span></span><span class="meta">$${fmtP(p.price)}</span></div>
+        <div class="meta">${p.mcap?`$${p.mcap}M size · revenue $${p.revenue}M${p.rev_growth==null?"":` (${p.rev_growth>0?"+":""}${p.rev_growth}%)`} · `:""}${p.off_high}% below 1-year high · ${p.vol_pickup}× volume · starter ~$${Math.round(p.bet)} · cut below ${fmtP(p.base_low)} · <a href="${esc(p.news)}" target="_blank" rel="noopener">news</a></div></div>`).join("")
+      :`<p class="empty">Nothing turning up from a base (checked ${th.checked} names, ${esc(th.date)}).</p>`;
     $("scan").innerHTML=(d.latest||[]).length?d.latest.map(p=>setupHtml(p,true)).join(""):`<p class="empty">No setups passed your rules on the last scan. Sitting out is a position too.</p>`;
     $("hist").innerHTML=(d.history||[]).slice(1).map(h=>`<details><summary>${esc(h.date)} · ${h.picks.length} setup${h.picks.length===1?"":"s"}</summary>${h.picks.map(p=>setupHtml(p,false)).join("")||'<p class="empty">None.</p>'}</details>`).join("")||`<p class="empty">Earlier scans will show here.</p>`;
   }catch(e){$("updated").textContent="Couldn't load the scan file. Refresh in a moment.";$("scan").innerHTML=""}
