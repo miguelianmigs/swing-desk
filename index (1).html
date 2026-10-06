@@ -154,7 +154,7 @@ function renderLists(){
 }
 function render(){renderStats();renderPlan();renderLists()}
 function setupHtml(p,btn){return `<div class="setup"><div class="top"><span class="tk">${esc(p.ticker)} <span class="meta">${esc(p.name||"")}</span></span>
-  <span class="meta">$${fmtP(p.price)} · +${(+p.change).toFixed(1)}% · ${(+p.rvol).toFixed(1)}× vol</span></div>
+  <span class="meta">$${fmtP(p.price)} · +${(+p.change).toFixed(1)}% · ${(+p.rvol).toFixed(1)}× vol${p.grade?` · fin. ${esc(p.grade)}`:""}</span></div>
   <div class="lv"><span class="e">Buy ${fmtP(p.entry)}</span><span class="s">Stop ${fmtP(p.stop)}</span><span class="t">Target ${fmtP(p.target)}</span></div>
   ${p.breakeven?`<div class="meta">Move stop to ${fmtP(p.entry)} at ${fmtP(p.breakeven)}${p.earnings?` · earnings ${esc(p.earnings)}`:""}${p.news?` · <a href="${esc(p.news)}" target="_blank" rel="noopener">news</a>`:""}</div>`:""}
   ${btn?`<button class="small" data-act="plan" data-tk="${esc(p.ticker)}" data-e="${p.entry}" data-s="${p.stop}" data-t="${p.target}">Plan</button>`:""}</div>`}
@@ -175,8 +175,10 @@ async function loadScan(){
     const th=d.theme;
     $("theme").innerHTML=!th?'<p class="empty">First theme scan runs Monday morning, or on any manual run.</p>'
       :(th.picks||[]).length?th.picks.map(p=>`<div class="setup"><div class="top"><span class="tk">${esc(p.ticker)} <span class="meta">${esc(p.name||"")} · ${esc(p.theme)}</span></span><span class="meta">$${fmtP(p.price)}</span></div>
-        <div class="meta">${p.mcap?`$${p.mcap}M size · revenue $${p.revenue}M${p.rev_growth==null?"":` (${p.rev_growth>0?"+":""}${p.rev_growth}%)`} · `:""}${p.off_high}% below 1-year high · ${p.vol_pickup}× volume · starter ~$${Math.round(p.bet)} · cut below ${fmtP(p.base_low)} · <a href="${esc(p.news)}" target="_blank" rel="noopener">news</a></div></div>`).join("")
-      :`<p class="empty">Nothing turning up from a base (checked ${th.checked} names, ${esc(th.date)}).</p>`;
+        <div class="meta">${p.grade?`<b>Financials ${esc(p.grade)}</b> (${p.fscore}/5)${(p.bad||[]).length?` ⚠ ${esc(p.bad.join(", "))}`:""} · `:""}${p.mcap?`$${p.mcap}M size · revenue $${p.revenue}M${p.rev_growth==null?"":` (${p.rev_growth>0?"+":""}${p.rev_growth}%)`} · `:""}${p.off_high}% below 1-year high · ${p.vol_pickup}× volume · starter ~$${Math.round(p.bet)} · cut below ${fmtP(p.base_low)} · <a href="${esc(p.news)}" target="_blank" rel="noopener">news</a></div></div>`).join("")
+      :`<p class="empty">No full signals (checked ${th.checked} names, ${esc(th.date)}).</p>`;
+    if(th&&(th.watch||[]).length){$("theme").innerHTML+=`<p class="hint" style="margin:14px 0 4px">Close to triggering: watch, don't buy yet</p>`+th.watch.map(w=>`<div class="row"><div><div class="tk">${esc(w.ticker)} <span class="meta">${esc(w.name||"")} · ${esc(w.theme)}</span></div>
+      <div class="meta">${w.grade?`<b>Financials ${esc(w.grade)}</b> (${w.fscore}/5)${(w.bad||[]).length?` ⚠ ${esc(w.bad.join(", "))}`:""} · `:""}$${fmtP(w.price)} · ${w.off_high}% below 1-yr high · ${w.mcap?`$${w.mcap}M size · `:""}missing: ${esc(w.missing)}</div></div></div>`).join("")}
     $("scan").innerHTML=(d.latest||[]).length?d.latest.map(p=>setupHtml(p,true)).join(""):`<p class="empty">No setups passed your rules on the last scan. Sitting out is a position too.</p>`;
     $("hist").innerHTML=(d.history||[]).slice(1).map(h=>`<details><summary>${esc(h.date)} · ${h.picks.length} setup${h.picks.length===1?"":"s"}</summary>${h.picks.map(p=>setupHtml(p,false)).join("")||'<p class="empty">None.</p>'}</details>`).join("")||`<p class="empty">Earlier scans will show here.</p>`;
   }catch(e){$("updated").textContent="Couldn't load the scan file. Refresh in a moment.";$("scan").innerHTML=""}
