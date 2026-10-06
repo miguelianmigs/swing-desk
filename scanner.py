@@ -57,6 +57,10 @@ THEME_MAX_OFF_HIGH = 40.0  # must still be at least this % below its 1-year high
 THEME_CROSS_DAYS = 10      # price reclaimed its 50-day average within this many days
 THEME_VOL_PICKUP = 1.3     # 10-day volume vs 60-day volume
 THEME_TOP_N = 5
+THEME_HALF_AT = 100.0      # sell half once the position is up this %, let the rest run
+THEME_MIN_GRADE = 3        # early-catch picks need at least 3 of 5 financial checks (grade C)
+COIL_RANGE_PCT = 15.0      # "coiling": last 10 days traded in a range tighter than this %
+COIL_VOL_DRY = 0.8         # "coiling": 10-day volume below this x the 60-day (sellers dried up)
 
 YAHOO_SCREENS = ["small_cap_gainers", "aggressive_small_caps",
                  "growth_technology_stocks", "most_actives"]
@@ -204,6 +208,10 @@ def find_setups(frames):
             skipped.append(f"{s['ticker']} (earnings {s['earnings']})")
             continue
         s["news"] = f"https://finance.yahoo.com/quote/{s['ticker']}/news"
+        try:
+            s.update(fundamentals(tk, info))
+        except Exception:
+            pass
         picks.append(s)
         if len(picks) >= TOP_N:
             break
@@ -274,6 +282,68 @@ def scorecard_summary(tracked):
     }
 
 
+# ================= Fundamentals =================
+def _row(df, names):
+    for n in names:
+        if df is not None and n in df.index:
+            vals = df.loc[n].dropna()
+            if len(vals):
+                return vals
+    return None
+
+
+def fundamentals(tk, info):
+    """Scores 5 financial health checks. Returns grade A-D, score, strengths and red flags."""
+    score, good, bad = 0, [], []
+    g = info.get("revenueGrowth")
+    if g is not None:
+        if g >= 0.10:
+            score += 1; good.append(f"revenue +{g*100:.0f}%")
+        elif g < 0:
+            bad.append(f"revenue {g*100:.0f}%")
+    gm = info.get("grossMargins")
+    if gm is not None:
+        if gm >= 0.30:
+            score += 1; good.append(f"{gm*100:.0f}% margins")
+        elif gm < 0.15:
+            bad.append(f"thin margins {gm*100:.0f}%")
+    cash, debt = info.get("totalCash") or 0, info.get("totalDebt") or 0
+    if cash >= debt:
+        score += 1; good.append("more cash than debt")
+    elif debt > 3 * max(cash, 1):
+        bad.append(f"heavy debt ${debt/1e6:,.0f}M vs ${cash/1e6:,.0f}M cash")
+    fcf = info.get("freeCashflow")
+    if fcf is not None:
+        if fcf >= 0:
+            score += 1; good.append("cash-flow positive")
+        else:
+            runway = cash / -fcf if fcf else 0
+            if runway >= 2:
+                score += 1; good.append(f"{runway:.0f}+ yrs of cash runway")
+            else:
+                bad.append(f"burning cash, ~{runway:.1f} yrs runway")
+    try:
+        sh = _row(tk.quarterly_balance_sheet, ["Ordinary Shares Number", "Share Issued"])
+        if sh is not None and len(sh) >= 4:
+            change = float(sh.iloc[0]) / float(sh.iloc[min(4, len(sh) - 1)]) - 1
+            if change <= 0.105:
+                score += 1
+            else:
+                bad.append(f"shares up {change*100:.0f}% (dilution)")
+    except Exception:
+        pass
+    grade = {5: "A", 4: "B", 3: "C"}.get(score, "D")
+    return {"grade": grade, "fscore": score, "good": good[:3], "bad": bad[:3]}
+
+
+def fund_line(p):
+    if "grade" not in p:
+        return ""
+    parts = ", ".join(p["good"]) or "no clear strengths"
+    flags = f" | watch out: {', '.join(p['bad'])}" if p["bad"] else ""
+    return f"  Financials {p['grade']} ({p['fscore']}/5): {parts}{flags}\n"
+
+
 # ================= Early-theme scan =================
 def load_themes():
     themes = {}
@@ -326,11 +396,20 @@ def theme_setup(df):
         missing = ("needs to close above its 50-day avg "
                    f"({s_now:.2f})" if price <= s_now else "needs a fresh push after holding above its 50-day")
     else:
-        return None
+        hi10, lo10 = float(df["High"].iloc[-10:].max()), float(low.iloc[-10:].min())
+        tight = (hi10 / lo10 - 1) * 100 <= COIL_RANGE_PCT
+        dry = vol_pickup <= COIL_VOL_DRY
+        if near and tight and dry:
+            status = "watch"
+            missing = (f"coiling: tight range, sellers dried up. Trigger = close above "
+                       f"{max(hi10, s_now):.2f} on heavy volume")
+        else:
+            return None
     base_low = round(float(low.iloc[-60:].min()), 2)
     return dict(status=status, missing=missing, price=round(price, 2), off_high=round(off_high, 1),
                 vol_pickup=round(vol_pickup, 1), sma50=round(s_now, 2), base_low=base_low,
                 cut_pct=round((1 - base_low / price) * 100, 1),
+                half_at=round(price * (1 + THEME_HALF_AT / 100), 2),
                 bet=round(THEME_BUCKET / THEME_BETS, 2))
 
 
@@ -368,12 +447,19 @@ def run_theme_scan():
         if len(bucket) >= THEME_TOP_N:
             continue
         try:
-            info = yf.Ticker(p["ticker"]).info
+            tk = yf.Ticker(p["ticker"])
+            info = tk.info
         except Exception:
             continue
         mcap = info.get("marketCap") or 0
         if mcap < THEME_MIN_MCAP:
             continue
+        p.update(fundamentals(tk, info))
+        if p["status"] == "pick" and p["fscore"] < THEME_MIN_GRADE:
+            p["status"], p["missing"] = "watch", f"chart triggered, but financials grade {p['grade']}"
+            bucket = watch
+            if len(watch) >= THEME_TOP_N:
+                continue
         rev = info.get("totalRevenue") or 0
         growth = info.get("revenueGrowth")
         p.update(name=info.get("shortName", p["ticker"]), mcap=round(mcap / 1e6),
@@ -382,6 +468,7 @@ def run_theme_scan():
         bucket.append(p)
         if len(final) >= THEME_TOP_N and len(watch) >= THEME_TOP_N:
             break
+    watch.sort(key=lambda w: -w.get("fscore", 0))        # healthiest companies first
     return final, watch, len(themes)
 
 
@@ -396,16 +483,19 @@ def format_theme_alert(picks, watch, checked):
         lines.append(
             f"{p['ticker']} ({p.get('name', p['ticker'])}, {p['theme']}) ${p['price']:.2f}\n"
             f"  Size ${p.get('mcap', 0):,}M | revenue ${p.get('revenue', 0)}M{growth}\n"
+            f"{fund_line(p)}"
             f"  {p['off_high']:.0f}% below its 1-year high, just reclaimed its 50-day average\n"
             f"  Volume {p['vol_pickup']:.1f}x normal over 10 days\n"
             f"  Starter: ~${p['bet']:.0f} | Cut if it closes below {p['base_low']:.2f} (-{p['cut_pct']:.0f}%)\n"
-            f"  Hold for months if it works. News: {p['news']}\n")
+            f"  Sell half at {p['half_at']:.2f} (+{THEME_HALF_AT:.0f}%): your money back, move it to swing trades\n"
+            f"  Let the other half run for months. News: {p['news']}\n")
     if watch:
         lines.append("CLOSE TO TRIGGERING (watch, don't buy yet):")
         for w in watch:
             lines.append(f"{w['ticker']} ({w.get('name', w['ticker'])}, {w['theme']}) ${w['price']:.2f}, "
                          f"{w['off_high']:.0f}% below 1-yr high, ${w.get('mcap', 0):,}M size\n"
-                         f"  Missing: {w['missing']}")
+                         f"{fund_line(w)}"
+                         f"  Missing: {w['missing']}\n")
     elif not picks:
         lines.append("Nothing close either. Patience is the strategy.")
     return "\n".join(lines)
@@ -435,6 +525,7 @@ def format_alert(picks, market, skipped):
                 f"  Buy-stop {s['entry']:.2f} | Stop {s['stop']:.2f} (-{s['stop_pct']:.1f}%) | Target {s['target']:.2f}\n"
                 f"  Move stop to {s['entry']:.2f} once price hits {s['breakeven']:.2f}\n"
                 f"  {s['shares']} sh = ${s['cost']:.2f} | risk ${s['risk']:.2f} | reward ${s['reward']:.2f}\n"
+                f"{fund_line(s)}"
                 f"  News: {s['news']}\n")
         msg = "\n".join(lines)
     if skipped:
