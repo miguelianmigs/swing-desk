@@ -293,7 +293,8 @@ def load_themes():
 
 
 def theme_setup(df):
-    """Beaten-down stock turning up from a long base. Returns dict or None."""
+    """Beaten-down stock turning up from a long base.
+    Returns dict with status "pick" (all signals), "watch" (close), or None."""
     df = df.dropna()
     if len(df) < 120:
         return None
@@ -308,18 +309,28 @@ def theme_setup(df):
     if off_high < THEME_MAX_OFF_HIGH:
         return None                                    # already ran: not early anymore
     sma50 = close.rolling(50).mean()
-    now_above = price > float(sma50.iloc[-1])
+    s_now = float(sma50.iloc[-1])
     was_below = (close.iloc[-THEME_CROSS_DAYS - 1:-1] < sma50.iloc[-THEME_CROSS_DAYS - 1:-1]).any()
-    if not (now_above and was_below):
-        return None                                    # needs a fresh reclaim of the 50-day
-    if float(sma50.iloc[-1]) < float(sma50.iloc[-11]) * 0.98:
-        return None                                    # 50-day still falling hard
+    not_falling = s_now >= float(sma50.iloc[-11]) * 0.98
+    reclaimed = price > s_now and was_below and not_falling
+    near = price >= s_now * 0.95 and not_falling      # within 5% of the 50-day, or above
     vol_pickup = float(vol.iloc[-10:].mean()) / float(vol.iloc[-60:].mean())
-    if vol_pickup < THEME_VOL_PICKUP:
-        return None                                    # no new buyers showing up
+    buyers = vol_pickup >= THEME_VOL_PICKUP
+
+    if reclaimed and buyers:
+        status, missing = "pick", ""
+    elif reclaimed:
+        status, missing = "watch", "waiting for volume to pick up"
+    elif buyers and near:
+        status = "watch"
+        missing = ("needs to close above its 50-day avg "
+                   f"({s_now:.2f})" if price <= s_now else "needs a fresh push after holding above its 50-day")
+    else:
+        return None
     base_low = round(float(low.iloc[-60:].min()), 2)
-    return dict(price=round(price, 2), off_high=round(off_high, 1), vol_pickup=round(vol_pickup, 1),
-                base_low=base_low, cut_pct=round((1 - base_low / price) * 100, 1),
+    return dict(status=status, missing=missing, price=round(price, 2), off_high=round(off_high, 1),
+                vol_pickup=round(vol_pickup, 1), sma50=round(s_now, 2), base_low=base_low,
+                cut_pct=round((1 - base_low / price) * 100, 1),
                 bet=round(THEME_BUCKET / THEME_BETS, 2))
 
 
@@ -349,10 +360,13 @@ def run_theme_scan():
             s.update(ticker=t, theme=theme,
                      news=f"https://finance.yahoo.com/quote/{t}/news")
             picks.append(s)
-    picks.sort(key=lambda p: (p["theme"] == "Market-wide", -p["vol_pickup"]))  # your themes first
+    picks.sort(key=lambda p: (p["status"] != "pick", p["theme"] == "Market-wide", -p["vol_pickup"]))
 
-    final = []
+    final, watch = [], []
     for p in picks:                           # quality check only on the few that passed
+        bucket = final if p["status"] == "pick" else watch
+        if len(bucket) >= THEME_TOP_N:
+            continue
         try:
             info = yf.Ticker(p["ticker"]).info
         except Exception:
@@ -365,18 +379,18 @@ def run_theme_scan():
         p.update(name=info.get("shortName", p["ticker"]), mcap=round(mcap / 1e6),
                  revenue=round(rev / 1e6, 1),
                  rev_growth=None if growth is None else round(growth * 100))
-        final.append(p)
-        if len(final) >= THEME_TOP_N:
+        bucket.append(p)
+        if len(final) >= THEME_TOP_N and len(watch) >= THEME_TOP_N:
             break
-    return final, len(themes)
+    return final, watch, len(themes)
 
 
-def format_theme_alert(picks, checked):
+def format_theme_alert(picks, watch, checked):
     head = (f"Early-catch scan (weekly)  |  {checked} names checked, under ${THEME_MAX_PRICE:.0f}\n"
             f"Long-shot bucket: ${THEME_BUCKET:.0f}, about ${THEME_BUCKET/THEME_BETS:.0f} per bet\n")
-    if not picks:
-        return head + "\nNothing turning up from a base this week. Patience is the strategy."
     lines = [head]
+    if not picks:
+        lines.append("No full signals this week.\n")
     for p in picks:
         growth = "" if p.get("rev_growth") is None else f" ({p['rev_growth']:+d}% yr/yr)"
         lines.append(
@@ -386,6 +400,14 @@ def format_theme_alert(picks, checked):
             f"  Volume {p['vol_pickup']:.1f}x normal over 10 days\n"
             f"  Starter: ~${p['bet']:.0f} | Cut if it closes below {p['base_low']:.2f} (-{p['cut_pct']:.0f}%)\n"
             f"  Hold for months if it works. News: {p['news']}\n")
+    if watch:
+        lines.append("CLOSE TO TRIGGERING (watch, don't buy yet):")
+        for w in watch:
+            lines.append(f"{w['ticker']} ({w.get('name', w['ticker'])}, {w['theme']}) ${w['price']:.2f}, "
+                         f"{w['off_high']:.0f}% below 1-yr high, ${w.get('mcap', 0):,}M size\n"
+                         f"  Missing: {w['missing']}")
+    elif not picks:
+        lines.append("Nothing close either. Patience is the strategy.")
     return "\n".join(lines)
 
 
@@ -485,9 +507,9 @@ def main():
     theme_msg = None
     if theme_scan_due(now):
         try:
-            tpicks, checked = run_theme_scan()
-            data["theme"] = {"date": stamp, "checked": checked, "picks": tpicks}
-            theme_msg = format_theme_alert(tpicks, checked)
+            tpicks, twatch, checked = run_theme_scan()
+            data["theme"] = {"date": stamp, "checked": checked, "picks": tpicks, "watch": twatch}
+            theme_msg = format_theme_alert(tpicks, twatch, checked)
         except Exception as e:
             print("theme scan failed:", e)
     save_data(data)
