@@ -1,0 +1,7 @@
+# Early-theme watchlist. One theme per line: Theme name: TICKER, TICKER, ...
+# Add or remove tickers anytime. The weekly theme scan checks every name here.
+Nuclear & uranium: UROY, UUUU, URG, NXE, DNN, LEU, SMR, OKLO, NNE, LTBR, EU
+Quantum: RGTI, QUBT, QBTS, IONQ, ARQQ, LAES
+Space: RKLB, ASTS, LUNR, RDW, PL, BKSY, SATL, SPCE
+AI power & data centers: BE, EOSE, FLNC, NVTS, AEHR, APLD, CORZ, IREN, WULF, CIFR, SOUN, BBAI
+Robotics & drones: SERV, RR, RCAT, UMAC, ONDS, ACHR, JOBY, EH
