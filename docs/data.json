@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-09 15:43 ET",
+ "updated": "2026-10-12 10:51 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-12 10:51 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-09 15:43 ET",
    "picks": []
@@ -137,7 +141,7 @@
  ],
  "market": {
   "ok": true,
-  "note": "Market healthy: QQQ +3.7% vs its 50-day average"
+  "note": "Market healthy: QQQ +2.9% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [],
@@ -153,149 +157,37 @@
   "waiting": 0
  },
  "theme": {
-  "date": "2026-10-06 13:40 ET",
-  "checked": 277,
+  "date": "2026-10-12 10:51 ET",
+  "checked": 246,
   "picks": [],
   "watch": [
    {
     "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 1.69,
-    "off_high": 77.3,
-    "vol_pickup": 0.7,
-    "sma50": 1.67,
-    "base_low": 1.3,
-    "cut_pct": 23.1,
-    "half_at": 3.38,
+    "missing": "needs a fresh push after holding above its 50-day",
+    "price": 3.88,
+    "off_high": 40.8,
+    "vol_pickup": 1.4,
+    "sma50": 3.06,
+    "base_low": 2.37,
+    "cut_pct": 38.8,
+    "half_at": 7.75,
     "bet": 20.0,
-    "ticker": "RR",
-    "theme": "Robotics & drones",
-    "news": "https://finance.yahoo.com/quote/RR/news",
-    "grade": "B",
-    "fscore": 4,
-    "good": [
-     "revenue +17%",
-     "59% margins",
-     "more cash than debt"
-    ],
-    "bad": [
-     "shares up 62% (dilution)"
-    ],
-    "name": "Richtech Robotics Inc.",
-    "mcap": 382,
-    "revenue": 5.4,
-    "rev_growth": 17
-   },
-   {
-    "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 2.48,
-    "off_high": 71.5,
-    "vol_pickup": 0.4,
-    "sma50": 2.45,
-    "base_low": 2.15,
-    "cut_pct": 13.5,
-    "half_at": 4.97,
-    "bet": 20.0,
-    "ticker": "LAES",
-    "theme": "Quantum",
-    "news": "https://finance.yahoo.com/quote/LAES/news",
-    "grade": "B",
-    "fscore": 4,
-    "good": [
-     "revenue +131%",
-     "53% margins",
-     "more cash than debt"
-    ],
-    "bad": [],
-    "name": "SEALSQ Corp",
-    "mcap": 559,
-    "revenue": 24.6,
-    "rev_growth": 131
-   },
-   {
-    "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 4.18,
-    "off_high": 51.5,
-    "vol_pickup": 0.6,
-    "sma50": 3.82,
-    "base_low": 2.88,
-    "cut_pct": 31.0,
-    "half_at": 8.35,
-    "bet": 20.0,
-    "ticker": "RXT",
+    "ticker": "SJT",
     "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/RXT/news",
+    "news": "https://finance.yahoo.com/quote/SJT/news",
     "grade": "D",
     "fscore": 2,
     "good": [
-     "cash-flow positive"
+     "100% margins"
     ],
     "bad": [
-     "heavy debt $3,308M vs $111M cash"
+     "revenue -94%",
+     "heavy debt $1M vs $0M cash"
     ],
-    "name": "Rackspace Technology, Inc.",
-    "mcap": 1064,
-    "revenue": 2702.2,
-    "rev_growth": 1
-   },
-   {
-    "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 4.86,
-    "off_high": 40.9,
-    "vol_pickup": 0.8,
-    "sma50": 4.76,
-    "base_low": 3.51,
-    "cut_pct": 27.7,
-    "half_at": 9.71,
-    "bet": 20.0,
-    "ticker": "ACDC",
-    "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/ACDC/news",
-    "grade": "D",
-    "fscore": 1,
-    "good": [
-     "cash-flow positive"
-    ],
-    "bad": [
-     "revenue -1%",
-     "heavy debt $1,218M vs $19M cash",
-     "shares up 14% (dilution)"
-    ],
-    "name": "ProFrac Holding Corp.",
-    "mcap": 884,
-    "revenue": 1787.3,
-    "rev_growth": -1
-   },
-   {
-    "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 2.04,
-    "off_high": 75.1,
-    "vol_pickup": 0.5,
-    "sma50": 1.99,
-    "base_low": 1.45,
-    "cut_pct": 28.7,
-    "half_at": 4.07,
-    "bet": 20.0,
-    "ticker": "HTZ",
-    "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/HTZ/news",
-    "grade": "D",
-    "fscore": 1,
-    "good": [
-     "cash-flow positive"
-    ],
-    "bad": [
-     "heavy debt $21,087M vs $635M cash",
-     "shares up 15% (dilution)"
-    ],
-    "name": "Hertz Global Holdings, Inc",
-    "mcap": 725,
-    "revenue": 8906.0,
-    "rev_growth": 10
+    "name": "San Juan Basin Royalty Trust",
+    "mcap": 181,
+    "revenue": 0.0,
+    "rev_growth": -94
    }
   ]
  }
