@@ -62,6 +62,16 @@ THEME_MIN_GRADE = 3        # early-catch picks need at least 3 of 5 financial ch
 COIL_RANGE_PCT = 15.0      # "coiling": last 10 days traded in a range tighter than this %
 COIL_VOL_DRY = 0.8         # "coiling": 10-day volume below this x the 60-day (sellers dried up)
 
+# ---------- Options scan (calls only, afternoon scan + any manual run) ----------
+OPT_BUDGET = 80.0          # max $ per options trade = your max loss
+OPT_MIN_DAYS, OPT_MAX_DAYS = 60, 130   # 2-4 months: room for the move, slower time decay
+OPT_MIN_PRICE, OPT_MAX_PRICE = 2.0, 40.0
+OPT_MIN_OI = 100           # open interest: enough traders that you can get out
+OPT_MAX_SPREAD = 0.20      # bid/ask gap under 20% of the price, or you start in a hole
+OPT_MAX_IV = 1.50          # skip options priced for a wild move (overpaying)
+OPT_MIN_GRADE = 3          # company financials C or better
+OPT_TOP_N = 3
+
 YAHOO_SCREENS = ["small_cap_gainers", "aggressive_small_caps",
                  "growth_technology_stocks", "most_actives"]
 EXTRA_TICKERS_FILE = "watchlist.txt"
@@ -454,7 +464,13 @@ def run_theme_scan():
         mcap = info.get("marketCap") or 0
         if mcap < THEME_MIN_MCAP:
             continue
+        name = (info.get("longName") or info.get("shortName") or "").lower()
+        if info.get("quoteType") not in (None, "EQUITY") or any(
+                w in name for w in (" trust", " fund", " etf", "royalty trust", " lp")):
+            continue                              # trusts, funds, partnerships: not growth companies
         p.update(fundamentals(tk, info))
+        if p["fscore"] < 2:
+            continue                              # grade D with 0-1 checks: not worth watching
         if p["status"] == "pick" and p["fscore"] < THEME_MIN_GRADE:
             p["status"], p["missing"] = "watch", f"chart triggered, but financials grade {p['grade']}"
             bucket = watch
@@ -505,6 +521,145 @@ def theme_scan_due(now):
     if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
         return True                                   # any manual run
     return now.weekday() == 0 and now.hour < 12        # Monday morning scan
+
+
+# ================= Options scan =================
+def _num(x, default=0.0):
+    try:
+        x = float(x)
+        return default if math.isnan(x) else x
+    except Exception:
+        return default
+
+
+def options_signal(df):
+    """Strong uptrend breaking to new 20-day highs on volume, not already extended."""
+    df = df.dropna()
+    if len(df) < 60:
+        return None
+    close, high, vol = df["Close"], df["High"], df["Volume"]
+    price = float(close.iloc[-1])
+    if not (OPT_MIN_PRICE <= price <= OPT_MAX_PRICE):
+        return None
+    sma50 = close.rolling(50).mean()
+    if price <= float(sma50.iloc[-1]) or price <= float(close.iloc[-20:].mean()):
+        return None
+    if float(sma50.iloc[-1]) < float(sma50.iloc[-11]):
+        return None                                   # 50-day must be rising
+    if price < float(high.iloc[-21:-1].max()) * 0.97:
+        return None                                   # at or near a breakout
+    avg = float(vol.iloc[-21:-1].mean())
+    rvol = float(vol.iloc[-1]) / avg if avg else 0
+    if rvol < 1.3:
+        return None
+    if price / float(close.iloc[-6]) - 1 > 0.25:
+        return None                                   # already ran: don't chase
+    return dict(price=round(price, 2), rvol=round(rvol, 1))
+
+
+def pick_contract(tk, price, today):
+    """Cheapest-to-profit call that fits the budget and is liquid enough."""
+    best = None
+    for exp in tk.options:
+        days = (date.fromisoformat(exp) - today).days
+        if not (OPT_MIN_DAYS <= days <= OPT_MAX_DAYS):
+            continue
+        try:
+            calls = tk.option_chain(exp).calls
+        except Exception:
+            continue
+        for _, c in calls.iterrows():
+            k, bid, ask = _num(c["strike"]), _num(c["bid"]), _num(c["ask"])
+            oi, iv = _num(c.get("openInterest")), _num(c.get("impliedVolatility"))
+            if not (price * 0.85 <= k <= price * 1.05):
+                continue                              # at or slightly in the money only
+            if bid <= 0 or ask <= 0 or ask * 100 > OPT_BUDGET:
+                continue
+            mid = (bid + ask) / 2
+            if (ask - bid) / mid > OPT_MAX_SPREAD or oi < OPT_MIN_OI or iv > OPT_MAX_IV:
+                continue
+            limit = round(mid + 0.01, 2)
+            need = (k + limit) / price * 100 - 100   # % the stock must rise to break even
+            cand = dict(strike=k, expiry=exp, days=days, limit=limit, cost=round(limit * 100),
+                        breakeven=round(k + limit, 2), need=round(need, 1),
+                        oi=int(oi), iv=round(iv * 100),
+                        cut_at=round(limit * 0.5, 2), take_at=round(limit * 2, 2),
+                        close_by=(date.fromisoformat(exp) - timedelta(days=30)).isoformat())
+            if best is None or (need, -days) < (best["need"], -best["days"]):
+                best = cand
+    return best
+
+
+def run_options_scan(frames):
+    themes = load_themes()
+    extra = [t for t in themes if t not in frames]
+    if extra:
+        frames = {**frames, **download(set(extra))}
+    signals = []
+    for t, df in frames.items():
+        if t == MARKET_TICKER:
+            continue
+        try:
+            sig = options_signal(df)
+        except Exception:
+            sig = None
+        if sig:
+            sig["ticker"] = t
+            signals.append(sig)
+    signals.sort(key=lambda x: -x["rvol"])
+    today = datetime.now(ET).date()
+    picks = []
+    for sig in signals[:25]:                          # only the strongest get the slow checks
+        try:
+            tk = yf.Ticker(sig["ticker"])
+            info = tk.info
+            name = (info.get("longName") or info.get("shortName") or "").lower()
+            if info.get("quoteType") not in (None, "EQUITY") or " trust" in name or " fund" in name:
+                continue
+            f = fundamentals(tk, info)
+            if f["fscore"] < OPT_MIN_GRADE:
+                continue
+            soon_date, soon = earnings_within(tk, 10)
+            c = pick_contract(tk, sig["price"], today)
+        except Exception as e:
+            print("options check failed", sig["ticker"], e)
+            continue
+        if not c:
+            continue
+        sig.update(f, name=info.get("shortName", sig["ticker"]), earnings=soon_date if soon else None,
+                   news=f"https://finance.yahoo.com/quote/{sig['ticker']}/news", **c)
+        picks.append(sig)
+        if len(picks) >= OPT_TOP_N:
+            break
+    return picks, len(signals), len(frames)
+
+
+def format_options_alert(picks, market, n_signals, checked):
+    head = (f"Options scan (calls)  |  budget ${OPT_BUDGET:.0f}/trade = your max loss\n"
+            f"{market['note']}\n")
+    if not market["ok"]:
+        return head + "\nMarket weak: no calls today. Calls need the market at your back."
+    if not picks:
+        return head + (f"\n{n_signals} breakouts found in {checked} stocks, but none passed "
+                       "financials + a liquid, affordable 2-4 month call. No trade.")
+    lines = [head]
+    for p in picks:
+        earn = f"\n  EARNINGS {p['earnings']}: price can gap either way" if p.get("earnings") else ""
+        lines.append(
+            f"{p['ticker']} ({p['name']}) stock ${p['price']:.2f}, {p['rvol']:.1f}x vol, financials {p['grade']}{earn}\n"
+            f"  BUY 1 CALL ${p['strike']:g} strike, exp {p['expiry']} ({p['days']} days)\n"
+            f"  Limit ${p['limit']:.2f} = ${p['cost']} total (max loss)\n"
+            f"  Profit at expiry above ${p['breakeven']:.2f} (stock {p['need']:+.1f}%)\n"
+            f"  Sell if option drops to ${p['cut_at']:.2f} | take profit at ${p['take_at']:.2f} (+100%)\n"
+            f"  Close by {p['close_by']} no matter what (time decay speeds up)\n"
+            f"  News: {p['news']}\n")
+    return "\n".join(lines)
+
+
+def options_scan_due(now):
+    if os.getenv("GITHUB_EVENT_NAME") == "workflow_dispatch":
+        return True
+    return now.hour >= 12                              # afternoon scan: full day of volume
 
 
 # ================= Alerts =================
@@ -603,11 +758,23 @@ def main():
             theme_msg = format_theme_alert(tpicks, twatch, checked)
         except Exception as e:
             print("theme scan failed:", e)
+
+    opt_msg = None
+    if options_scan_due(now):
+        try:
+            opicks, nsig, checked = ([], 0, 0) if not market["ok"] else run_options_scan(frames)
+            data["options"] = {"date": stamp, "market_ok": market["ok"], "picks": opicks,
+                               "signals": nsig, "checked": checked}
+            opt_msg = format_options_alert(opicks, market, nsig, checked)
+        except Exception as e:
+            print("options scan failed:", e)
     save_data(data)
 
     send(format_alert(picks, market, skipped))
     if theme_msg:
         send(theme_msg)
+    if opt_msg:
+        send(opt_msg)
 
 
 if __name__ == "__main__":

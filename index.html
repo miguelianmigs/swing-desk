@@ -78,6 +78,12 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
     <div id="theme"></div>
   </section>
 
+  <section aria-labelledby="optH">
+    <h2 id="optH">Options ideas</h2>
+    <p class="hint">Calls on strong breakouts with healthy financials. Max loss is what you pay. Runs every afternoon.</p>
+    <div id="opts"></div>
+  </section>
+
   <div class="settings">
     <div><label for="startCash">Starting cash ($)</label><input id="startCash" type="number" step="0.01" inputmode="decimal"></div>
     <div><label for="riskPct">Risk per trade (%)</label><input id="riskPct" type="number" step="0.5" min="0.5" max="5" inputmode="decimal"></div>
@@ -179,6 +185,13 @@ async function loadScan(){
       :`<p class="empty">No full signals (checked ${th.checked} names, ${esc(th.date)}).</p>`;
     if(th&&(th.watch||[]).length){$("theme").innerHTML+=`<p class="hint" style="margin:14px 0 4px">Close to triggering: watch, don't buy yet</p>`+th.watch.map(w=>`<div class="row"><div><div class="tk">${esc(w.ticker)} <span class="meta">${esc(w.name||"")} · ${esc(w.theme)}</span></div>
       <div class="meta">${w.grade?`<b>Financials ${esc(w.grade)}</b> (${w.fscore}/5)${(w.bad||[]).length?` ⚠ ${esc(w.bad.join(", "))}`:""} · `:""}$${fmtP(w.price)} · ${w.off_high}% below 1-yr high · ${w.mcap?`$${w.mcap}M size · `:""}missing: ${esc(w.missing)}</div></div></div>`).join("")}
+    const o=d.options;
+    $("opts").innerHTML=!o?'<p class="empty">First options scan runs on the afternoon scan, or any manual run.</p>'
+      :!o.market_ok?'<p class="empty">Market weak: no calls.</p>'
+      :(o.picks||[]).length?o.picks.map(p=>`<div class="setup"><div class="top"><span class="tk">${esc(p.ticker)} <span class="meta">${esc(p.name||"")} · fin. ${esc(p.grade||"")}</span></span><span class="meta">stock $${fmtP(p.price)}</span></div>
+        <div class="lv"><span class="e">Call $${p.strike} · ${esc(p.expiry)}</span><span>limit $${(+p.limit).toFixed(2)} = $${p.cost}</span></div>
+        <div class="meta">Breakeven $${fmtP(p.breakeven)} · cut at $${(+p.cut_at).toFixed(2)} · take profit at $${(+p.take_at).toFixed(2)} · close by ${esc(p.close_by)}${p.earnings?` · earnings ${esc(p.earnings)}`:""} · <a href="${esc(p.news)}" target="_blank" rel="noopener">news</a></div></div>`).join("")
+      :`<p class="empty">${o.signals} breakouts, none with a good call (${esc(o.date)}).</p>`;
     $("scan").innerHTML=(d.latest||[]).length?d.latest.map(p=>setupHtml(p,true)).join(""):`<p class="empty">No setups passed your rules on the last scan. Sitting out is a position too.</p>`;
     $("hist").innerHTML=(d.history||[]).slice(1).map(h=>`<details><summary>${esc(h.date)} · ${h.picks.length} setup${h.picks.length===1?"":"s"}</summary>${h.picks.map(p=>setupHtml(p,false)).join("")||'<p class="empty">None.</p>'}</details>`).join("")||`<p class="empty">Earlier scans will show here.</p>`;
   }catch(e){$("updated").textContent="Couldn't load the scan file. Refresh in a moment.";$("scan").innerHTML=""}
