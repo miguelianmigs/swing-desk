@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-15 15:57 ET",
+ "updated": "2026-10-15 16:09 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-15 16:09 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-15 15:57 ET",
    "picks": []
@@ -169,7 +173,7 @@
  ],
  "market": {
   "ok": true,
-  "note": "Market healthy: QQQ +0.3% vs its 50-day average"
+  "note": "Market healthy: QQQ +0.2% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [],
@@ -185,38 +189,45 @@
   "waiting": 0
  },
  "theme": {
-  "date": "2026-10-12 10:51 ET",
-  "checked": 246,
+  "date": "2026-10-15 16:09 ET",
+  "checked": 320,
   "picks": [],
   "watch": [
    {
     "status": "watch",
-    "missing": "needs a fresh push after holding above its 50-day",
-    "price": 3.88,
-    "off_high": 40.8,
-    "vol_pickup": 1.4,
-    "sma50": 3.06,
-    "base_low": 2.37,
-    "cut_pct": 38.8,
-    "half_at": 7.75,
+    "missing": "waiting for volume to pick up",
+    "price": 4.88,
+    "off_high": 41.3,
+    "vol_pickup": 0.7,
+    "sma50": 4.14,
+    "base_low": 2.95,
+    "cut_pct": 39.5,
+    "half_at": 9.75,
     "bet": 20.0,
-    "ticker": "SJT",
+    "ticker": "EVH",
     "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/SJT/news",
-    "grade": "D",
-    "fscore": 2,
+    "news": "https://finance.yahoo.com/quote/EVH/news",
+    "grade": "C",
+    "fscore": 3,
     "good": [
-     "100% margins"
+     "revenue +47%",
+     "cash-flow positive"
     ],
     "bad": [
-     "revenue -94%",
-     "heavy debt $1M vs $0M cash"
+     "heavy debt $970M vs $116M cash"
     ],
-    "name": "San Juan Basin Royalty Trust",
-    "mcap": 181,
-    "revenue": 0.0,
-    "rev_growth": -94
+    "name": "Evolent Health, Inc",
+    "mcap": 551,
+    "revenue": 2097.0,
+    "rev_growth": 47
    }
   ]
+ },
+ "options": {
+  "date": "2026-10-15 16:09 ET",
+  "market_ok": true,
+  "picks": [],
+  "signals": 5,
+  "checked": 360
  }
 }
