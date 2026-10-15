@@ -34,7 +34,9 @@ BREAKOUT_BUFFER = 3.0      # price must be within this % of (or above) the prior
 
 # ---------- Trade plan ----------
 MAX_STOP_PCT = 10.0       # skip setups whose natural stop is further than this below entry
-REWARD_RISK = 2.0         # target = entry + 2x the risk
+REWARD_RISK = 2.0         # breakouts: target = entry + 2x the risk
+PULLBACK_REWARD_RISK = 1.5   # pullbacks: closer target, aims for a higher win rate
+PULLBACK_MAX_OFF_HIGH = 15.0 # pullback must be 3-15% below its recent high
 TOP_N = 5
 
 # ---------- Safety filters ----------
@@ -94,6 +96,7 @@ def build_universe():
     if os.path.exists(EXTRA_TICKERS_FILE):
         with open(EXTRA_TICKERS_FILE) as f:
             tickers.update(l.strip().upper() for l in f if l.strip() and not l.startswith("#"))
+    tickers.update(load_themes())          # your theme stocks get checked for pullbacks too
     return sorted(t for t in tickers if t.isalpha() and len(t) <= 5)
 
 
@@ -172,6 +175,54 @@ def setup_for(df):
                 stop_pct=risk_ps / entry * 100)
 
 
+def pullback_for(df):
+    """Strong uptrend dipping to its 20-day average, then bouncing. Returns setup dict or None."""
+    df = df.dropna()
+    if len(df) < 60:
+        return None
+    close, high, low, vol = df["Close"], df["High"], df["Low"], df["Volume"]
+    price = float(close.iloc[-1])
+    avg_vol = float(vol.iloc[-21:-1].mean())
+    if not (MIN_PRICE <= price <= MAX_PRICE) or avg_vol < MIN_AVG_VOLUME:
+        return None
+    sma20s, sma50s = close.rolling(20).mean(), close.rolling(50).mean()
+    sma20, sma50 = float(sma20s.iloc[-1]), float(sma50s.iloc[-1])
+    if not (price >= sma20 * 0.98 and sma20 > sma50) or sma50 < float(sma50s.iloc[-11]):
+        return None                                        # needs a rising uptrend
+    recent_high = float(high.iloc[-20:].max())
+    off = (1 - price / recent_high) * 100
+    if not (3.0 <= off <= PULLBACK_MAX_OFF_HIGH):
+        return None                                        # a real dip, not a collapse
+    if float(low.iloc[-3:].min()) > sma20 * 1.02:
+        return None                                        # dip must reach the 20-day average
+    change = price / float(close.iloc[-2]) - 1
+    if change <= 0:
+        return None                                        # bounce has to start today
+    entry = round(float(high.iloc[-1]) + 0.01, 2)
+    stop = round(float(low.iloc[-3:].min()) - 0.01, 2)
+    if stop >= entry or (entry - stop) / entry * 100 > MAX_STOP_PCT:
+        return None
+    s = size_trade(entry, stop, PULLBACK_REWARD_RISK)
+    if not s:
+        return None
+    s.update(type="pullback", price=price, change=change * 100,
+             rvol=float(vol.iloc[-1]) / avg_vol if avg_vol else 0)
+    return s
+
+
+def size_trade(entry, stop, rr):
+    risk_ps = entry - stop
+    target = round(entry + rr * risk_ps, 2)
+    shares = math.floor(min(ACCOUNT * RISK_PCT / 100 / risk_ps,
+                            ACCOUNT * MAX_POSITION_PCT / 100 / entry))
+    if shares < 1:
+        return None
+    return dict(entry=entry, stop=stop, target=target,
+                breakeven=round(entry + (target - entry) / 2, 2), shares=shares,
+                cost=shares * entry, risk=shares * risk_ps, reward=shares * (target - entry),
+                stop_pct=risk_ps / entry * 100)
+
+
 def earnings_within(tk, days):
     """Returns (date_str or None, True if within `days`)."""
     try:
@@ -195,12 +246,17 @@ def find_setups(frames):
             continue
         try:
             s = setup_for(df)
+            if s:
+                s["type"] = "breakout"
+            else:
+                s = pullback_for(df)
         except Exception:
             s = None
         if s:
             s["ticker"] = t
             found.append(s)
     found.sort(key=lambda s: s["rvol"], reverse=True)
+    themes = load_themes()
 
     picks, skipped = [], []
     for s in found:
@@ -211,7 +267,7 @@ def find_setups(frames):
             continue
         s["sector"] = info.get("sector", "")
         s["name"] = info.get("shortName", s["ticker"])
-        if s["sector"] not in SECTORS:
+        if s["sector"] not in SECTORS and s["ticker"] not in themes:
             continue
         s["earnings"], soon = earnings_within(tk, EARNINGS_DAYS)
         if soon:
@@ -289,6 +345,9 @@ def scorecard_summary(tracked):
         "per_trade": round(avg_r * ACCOUNT * RISK_PCT / 100, 2),
         "open": len([a for a in tracked if a["status"] == "open"]),
         "waiting": len([a for a in tracked if a["status"] == "waiting"]),
+        "by_type": {t: {"closed": len(d), "win_rate": round(len([a for a in d if a.get("r", 0) > 0]) / len(d) * 100)}
+                    for t in ("breakout", "pullback")
+                    for d in [[a for a in done if a.get("type", "breakout") == t]] if d},
     }
 
 
@@ -667,7 +726,7 @@ def format_alert(picks, market, skipped):
     risk = ACCOUNT * RISK_PCT / 100
     head = f"Swing scan  |  risk ${risk:.2f}/trade\n{market['note']}"
     if not market["ok"]:
-        return (head + "\n\nSitting out: breakouts fail more often when the market is "
+        return (head + "\n\nSitting out: setups fail more often when the market is "
                 "below its 50-day average. No trades today.")
     if not picks:
         msg = head + "\n\nNo setups passed your rules. No trade is a fine trade."
@@ -676,7 +735,8 @@ def format_alert(picks, market, skipped):
         for s in picks:
             earn = f" | earnings {s['earnings']}" if s.get("earnings") else ""
             lines.append(
-                f"{s['ticker']} ({s['name']}) ${s['price']:.2f}, +{s['change']:.1f}%, {s['rvol']:.1f}x vol{earn}\n"
+                f"{s['ticker']} ({s['name']}) [{s.get('type', 'breakout').upper()}] "
+                f"${s['price']:.2f}, +{s['change']:.1f}%, {s['rvol']:.1f}x vol{earn}\n"
                 f"  Buy-stop {s['entry']:.2f} | Stop {s['stop']:.2f} (-{s['stop_pct']:.1f}%) | Target {s['target']:.2f}\n"
                 f"  Move stop to {s['entry']:.2f} once price hits {s['breakeven']:.2f}\n"
                 f"  {s['shares']} sh = ${s['cost']:.2f} | risk ${s['risk']:.2f} | reward ${s['reward']:.2f}\n"
@@ -739,7 +799,8 @@ def main():
             continue
         tracked.append({"ticker": p["ticker"], "date": today, "entry": p["entry"],
                         "stop": p["stop"], "target": p["target"], "breakeven": p["breakeven"],
-                        "market_ok": market["ok"], "status": "waiting"})
+                        "market_ok": market["ok"], "status": "waiting",
+                        "type": p.get("type", "breakout")})
         active.add(p["ticker"])
     tracked = tracked[-TRACK_KEEP:]
 
