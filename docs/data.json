@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-15 16:09 ET",
+ "updated": "2026-10-15 16:26 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-15 16:26 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-15 16:09 ET",
    "picks": []
@@ -175,7 +179,9 @@
   "ok": true,
   "note": "Market healthy: QQQ +0.2% vs its 50-day average"
  },
- "skipped": [],
+ "skipped": [
+  "AMC (earnings 2026-10-20)"
+ ],
  "tracked": [],
  "scorecard": {
   "alerts": 0,
@@ -186,23 +192,24 @@
   "avg_r": 0,
   "per_trade": 0.0,
   "open": 0,
-  "waiting": 0
+  "waiting": 0,
+  "by_type": {}
  },
  "theme": {
-  "date": "2026-10-15 16:09 ET",
+  "date": "2026-10-15 16:26 ET",
   "checked": 320,
   "picks": [],
   "watch": [
    {
     "status": "watch",
     "missing": "waiting for volume to pick up",
-    "price": 4.88,
+    "price": 4.87,
     "off_high": 41.3,
     "vol_pickup": 0.7,
     "sma50": 4.14,
     "base_low": 2.95,
-    "cut_pct": 39.5,
-    "half_at": 9.75,
+    "cut_pct": 39.4,
+    "half_at": 9.74,
     "bet": 20.0,
     "ticker": "EVH",
     "theme": "Market-wide",
@@ -224,10 +231,10 @@
   ]
  },
  "options": {
-  "date": "2026-10-15 16:09 ET",
+  "date": "2026-10-15 16:26 ET",
   "market_ok": true,
   "picks": [],
-  "signals": 5,
+  "signals": 7,
   "checked": 360
  }
 }
