@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-15 16:26 ET",
+ "updated": "2026-10-16 11:00 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-16 11:00 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-15 16:26 ET",
    "picks": []
@@ -176,12 +180,10 @@
   }
  ],
  "market": {
-  "ok": true,
-  "note": "Market healthy: QQQ +0.2% vs its 50-day average"
+  "ok": false,
+  "note": "Market weak: QQQ -0.8% vs its 50-day average"
  },
- "skipped": [
-  "AMC (earnings 2026-10-20)"
- ],
+ "skipped": [],
  "tracked": [],
  "scorecard": {
   "alerts": 0,
