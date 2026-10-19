@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-16 15:54 ET",
+ "updated": "2026-10-19 11:09 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-19 11:09 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-16 15:54 ET",
    "picks": []
@@ -185,7 +189,7 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -2.3% vs its 50-day average"
+  "note": "Market weak: QQQ -0.6% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [],
@@ -202,20 +206,20 @@
   "by_type": {}
  },
  "theme": {
-  "date": "2026-10-15 16:26 ET",
-  "checked": 320,
+  "date": "2026-10-19 11:09 ET",
+  "checked": 263,
   "picks": [],
   "watch": [
    {
     "status": "watch",
     "missing": "waiting for volume to pick up",
-    "price": 4.87,
-    "off_high": 41.3,
+    "price": 4.51,
+    "off_high": 45.7,
     "vol_pickup": 0.7,
-    "sma50": 4.14,
+    "sma50": 4.17,
     "base_low": 2.95,
-    "cut_pct": 39.4,
-    "half_at": 9.74,
+    "cut_pct": 34.6,
+    "half_at": 9.02,
     "bet": 20.0,
     "ticker": "EVH",
     "theme": "Market-wide",
@@ -230,9 +234,39 @@
      "heavy debt $970M vs $116M cash"
     ],
     "name": "Evolent Health, Inc",
-    "mcap": 551,
+    "mcap": 510,
     "revenue": 2097.0,
     "rev_growth": 47
+   },
+   {
+    "status": "watch",
+    "missing": "chart triggered, but financials grade D",
+    "price": 3.64,
+    "off_high": 49.2,
+    "vol_pickup": 1.6,
+    "sma50": 3.63,
+    "base_low": 2.86,
+    "cut_pct": 21.5,
+    "half_at": 7.29,
+    "bet": 20.0,
+    "ticker": "RXRX",
+    "theme": "Market-wide",
+    "news": "https://finance.yahoo.com/quote/RXRX/news",
+    "grade": "D",
+    "fscore": 2,
+    "good": [
+     "more cash than debt",
+     "2+ yrs of cash runway"
+    ],
+    "bad": [
+     "revenue -60%",
+     "thin margins 0%",
+     "shares up 23% (dilution)"
+    ],
+    "name": "Recursion Pharmaceuticals, Inc.",
+    "mcap": 1949,
+    "revenue": 54.9,
+    "rev_growth": -60
    }
   ]
  },
