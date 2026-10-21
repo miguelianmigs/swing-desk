@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-20 15:58 ET",
+ "updated": "2026-10-21 11:02 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-21 11:02 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-20 15:58 ET",
    "picks": []
@@ -201,11 +205,9 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -1.3% vs its 50-day average"
+  "note": "Market weak: QQQ -0.4% vs its 50-day average"
  },
- "skipped": [
-  "AMC (earnings 2026-10-22)"
- ],
+ "skipped": [],
  "tracked": [
   {
    "ticker": "SNAP",
