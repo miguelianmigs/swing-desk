@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-23 15:56 ET",
+ "updated": "2026-10-26 11:50 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-26 11:50 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-23 15:56 ET",
    "picks": []
@@ -225,7 +229,7 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -2.9% vs its 50-day average"
+  "note": "Market weak: QQQ -1.6% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -256,69 +260,10 @@
   "by_type": {}
  },
  "theme": {
-  "date": "2026-10-19 11:09 ET",
-  "checked": 263,
+  "date": "2026-10-26 11:50 ET",
+  "checked": 275,
   "picks": [],
-  "watch": [
-   {
-    "status": "watch",
-    "missing": "waiting for volume to pick up",
-    "price": 4.51,
-    "off_high": 45.7,
-    "vol_pickup": 0.7,
-    "sma50": 4.17,
-    "base_low": 2.95,
-    "cut_pct": 34.6,
-    "half_at": 9.02,
-    "bet": 20.0,
-    "ticker": "EVH",
-    "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/EVH/news",
-    "grade": "C",
-    "fscore": 3,
-    "good": [
-     "revenue +47%",
-     "cash-flow positive"
-    ],
-    "bad": [
-     "heavy debt $970M vs $116M cash"
-    ],
-    "name": "Evolent Health, Inc",
-    "mcap": 510,
-    "revenue": 2097.0,
-    "rev_growth": 47
-   },
-   {
-    "status": "watch",
-    "missing": "chart triggered, but financials grade D",
-    "price": 3.64,
-    "off_high": 49.2,
-    "vol_pickup": 1.6,
-    "sma50": 3.63,
-    "base_low": 2.86,
-    "cut_pct": 21.5,
-    "half_at": 7.29,
-    "bet": 20.0,
-    "ticker": "RXRX",
-    "theme": "Market-wide",
-    "news": "https://finance.yahoo.com/quote/RXRX/news",
-    "grade": "D",
-    "fscore": 2,
-    "good": [
-     "more cash than debt",
-     "2+ yrs of cash runway"
-    ],
-    "bad": [
-     "revenue -60%",
-     "thin margins 0%",
-     "shares up 23% (dilution)"
-    ],
-    "name": "Recursion Pharmaceuticals, Inc.",
-    "mcap": 1949,
-    "revenue": 54.9,
-    "rev_growth": -60
-   }
-  ]
+  "watch": []
  },
  "options": {
   "date": "2026-10-23 15:56 ET",
