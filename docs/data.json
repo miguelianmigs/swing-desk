@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-26 11:50 ET",
+ "updated": "2026-10-26 16:02 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-26 16:02 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-26 11:50 ET",
    "picks": []
@@ -229,7 +233,7 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -1.6% vs its 50-day average"
+  "note": "Market weak: QQQ -1.8% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -245,10 +249,21 @@
    "type": "pullback",
    "fill": 6.37,
    "filled": "2026-10-20"
+  },
+  {
+   "ticker": "AMC",
+   "date": "2026-10-26",
+   "entry": 2.97,
+   "stop": 2.84,
+   "target": 3.17,
+   "breakeven": 3.07,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
   }
  ],
  "scorecard": {
-  "alerts": 1,
+  "alerts": 2,
   "filled": 1,
   "closed": 0,
   "wins": 0,
@@ -256,7 +271,7 @@
   "avg_r": 0,
   "per_trade": 0.0,
   "open": 1,
-  "waiting": 0,
+  "waiting": 1,
   "by_type": {}
  },
  "theme": {
@@ -266,7 +281,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-10-23 15:56 ET",
+  "date": "2026-10-26 16:02 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
