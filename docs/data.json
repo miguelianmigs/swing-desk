@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-28 11:20 ET",
+ "updated": "2026-10-28 16:11 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-28 16:11 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-28 11:20 ET",
    "picks": []
@@ -244,10 +248,12 @@
   }
  ],
  "market": {
-  "ok": false,
-  "note": "Market weak: QQQ -0.4% vs its 50-day average"
+  "ok": true,
+  "note": "Market healthy: QQQ +0.1% vs its 50-day average"
  },
- "skipped": [],
+ "skipped": [
+  "FLYW (earnings 2026-11-03)"
+ ],
  "tracked": [
   {
    "ticker": "SNAP",
@@ -257,10 +263,13 @@
    "target": 7.13,
    "breakeven": 6.75,
    "market_ok": false,
-   "status": "open",
+   "status": "loss",
    "type": "pullback",
    "fill": 6.37,
-   "filled": "2026-10-20"
+   "filled": "2026-10-20",
+   "exit": 5.86,
+   "closed": "2026-10-28",
+   "r": -1.0
   },
   {
    "ticker": "AMC",
@@ -279,14 +288,19 @@
  "scorecard": {
   "alerts": 2,
   "filled": 2,
-  "closed": 0,
+  "closed": 1,
   "wins": 0,
-  "win_rate": null,
-  "avg_r": 0,
-  "per_trade": 0.0,
-  "open": 2,
+  "win_rate": 0,
+  "avg_r": -1.0,
+  "per_trade": -4.86,
+  "open": 1,
   "waiting": 0,
-  "by_type": {}
+  "by_type": {
+   "pullback": {
+    "closed": 1,
+    "win_rate": 0
+   }
+  }
  },
  "theme": {
   "date": "2026-10-26 11:50 ET",
@@ -295,10 +309,10 @@
   "watch": []
  },
  "options": {
-  "date": "2026-10-27 16:02 ET",
-  "market_ok": false,
+  "date": "2026-10-28 16:11 ET",
+  "market_ok": true,
   "picks": [],
-  "signals": 0,
-  "checked": 0
+  "signals": 5,
+  "checked": 374
  }
 }
