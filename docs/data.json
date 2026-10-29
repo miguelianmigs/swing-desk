@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-28 16:11 ET",
+ "updated": "2026-10-29 11:20 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-29 11:20 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-28 16:11 ET",
    "picks": []
@@ -248,12 +252,10 @@
   }
  ],
  "market": {
-  "ok": true,
-  "note": "Market healthy: QQQ +0.1% vs its 50-day average"
+  "ok": false,
+  "note": "Market weak: QQQ -1.2% vs its 50-day average"
  },
- "skipped": [
-  "FLYW (earnings 2026-11-03)"
- ],
+ "skipped": [],
  "tracked": [
   {
    "ticker": "SNAP",
@@ -282,7 +284,8 @@
    "status": "open",
    "type": "pullback",
    "fill": 2.97,
-   "filled": "2026-10-27"
+   "filled": "2026-10-27",
+   "live_stop": 2.97
   }
  ],
  "scorecard": {
