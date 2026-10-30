@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-30 11:20 ET",
+ "updated": "2026-10-30 16:07 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-30 16:07 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-30 11:20 ET",
    "picks": []
@@ -261,9 +265,11 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -4.1% vs its 50-day average"
+  "note": "Market weak: QQQ -4.7% vs its 50-day average"
  },
- "skipped": [],
+ "skipped": [
+  "FLYW (earnings 2026-11-03)"
+ ],
  "tracked": [
   {
    "ticker": "SNAP",
@@ -306,26 +312,29 @@
    "target": 12.87,
    "breakeven": 12.55,
    "market_ok": false,
-   "status": "open",
+   "status": "breakeven",
    "type": "pullback",
    "fill": 12.61,
    "filled": "2026-10-30",
-   "live_stop": 12.61
+   "live_stop": 12.61,
+   "exit": 12.61,
+   "closed": "2026-10-30",
+   "r": 0.0
   }
  ],
  "scorecard": {
   "alerts": 3,
   "filled": 3,
-  "closed": 2,
+  "closed": 3,
   "wins": 0,
   "win_rate": 0,
-  "avg_r": -0.69,
-  "per_trade": -3.35,
-  "open": 1,
+  "avg_r": -0.46,
+  "per_trade": -2.24,
+  "open": 0,
   "waiting": 0,
   "by_type": {
    "pullback": {
-    "closed": 2,
+    "closed": 3,
     "win_rate": 0
    }
   }
@@ -337,7 +346,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-10-29 16:12 ET",
+  "date": "2026-10-30 16:07 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
