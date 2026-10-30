@@ -1,9 +1,13 @@
 {
- "updated": "2026-10-29 16:12 ET",
+ "updated": "2026-10-30 11:20 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-10-30 11:20 ET",
+   "picks": []
+  },
   {
    "date": "2026-10-29 16:12 ET",
    "picks": []
@@ -257,12 +261,9 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -1.3% vs its 50-day average"
+  "note": "Market weak: QQQ -4.1% vs its 50-day average"
  },
- "skipped": [
-  "QNST (earnings 2026-11-04)",
-  "AMC (earnings 2026-11-04)"
- ],
+ "skipped": [],
  "tracked": [
   {
    "ticker": "SNAP",
@@ -305,20 +306,23 @@
    "target": 12.87,
    "breakeven": 12.55,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "open",
+   "type": "pullback",
+   "fill": 12.61,
+   "filled": "2026-10-30",
+   "live_stop": 12.61
   }
  ],
  "scorecard": {
   "alerts": 3,
-  "filled": 2,
+  "filled": 3,
   "closed": 2,
   "wins": 0,
   "win_rate": 0,
   "avg_r": -0.69,
   "per_trade": -3.35,
-  "open": 0,
-  "waiting": 1,
+  "open": 1,
+  "waiting": 0,
   "by_type": {
    "pullback": {
     "closed": 2,
