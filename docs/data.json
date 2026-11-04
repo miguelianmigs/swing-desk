@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-03 16:15 ET",
+ "updated": "2026-11-04 11:21 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-04 11:21 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-03 16:15 ET",
    "picks": []
@@ -281,7 +285,7 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -5.3% vs its 50-day average"
+  "note": "Market weak: QQQ -4.3% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -334,10 +338,21 @@
    "exit": 12.61,
    "closed": "2026-10-30",
    "r": 0.0
+  },
+  {
+   "ticker": "WLTH",
+   "date": "2026-11-04",
+   "entry": 10.98,
+   "stop": 10.28,
+   "target": 12.03,
+   "breakeven": 11.5,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
   }
  ],
  "scorecard": {
-  "alerts": 3,
+  "alerts": 4,
   "filled": 3,
   "closed": 3,
   "wins": 0,
@@ -345,7 +360,7 @@
   "avg_r": -0.46,
   "per_trade": -2.24,
   "open": 0,
-  "waiting": 0,
+  "waiting": 1,
   "by_type": {
    "pullback": {
     "closed": 3,
