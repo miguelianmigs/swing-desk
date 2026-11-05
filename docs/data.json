@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-04 19:59 ET",
+ "updated": "2026-11-05 16:31 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-05 16:31 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-04 19:59 ET",
    "picks": []
@@ -289,7 +293,7 @@
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -4.3% vs its 50-day average"
+  "note": "Market weak: QQQ -10.4% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -351,19 +355,32 @@
    "target": 12.03,
    "breakeven": 11.5,
    "market_ok": false,
+   "status": "open",
+   "type": "pullback",
+   "fill": 11.27,
+   "filled": "2026-11-05"
+  },
+  {
+   "ticker": "INFY",
+   "date": "2026-11-05",
+   "entry": 12.86,
+   "stop": 11.87,
+   "target": 14.34,
+   "breakeven": 13.6,
+   "market_ok": false,
    "status": "waiting",
    "type": "pullback"
   }
  ],
  "scorecard": {
-  "alerts": 4,
-  "filled": 3,
+  "alerts": 5,
+  "filled": 4,
   "closed": 3,
   "wins": 0,
   "win_rate": 0,
   "avg_r": -0.46,
   "per_trade": -2.24,
-  "open": 0,
+  "open": 1,
   "waiting": 1,
   "by_type": {
    "pullback": {
@@ -379,7 +396,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-04 19:59 ET",
+  "date": "2026-11-05 16:31 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
