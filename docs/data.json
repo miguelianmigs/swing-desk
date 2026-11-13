@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-12 16:53 ET",
+ "updated": "2026-11-13 16:30 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-13 16:30 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-12 16:53 ET",
    "picks": []
@@ -272,48 +276,11 @@
      "name": "PagSeguro Digital Ltd."
     }
    ]
-  },
-  {
-   "date": "2026-10-05 12:24 ET",
-   "picks": [
-    {
-     "price": 11.91,
-     "change": 24.76,
-     "rvol": 3.67,
-     "entry": 12.07,
-     "stop": 10.62,
-     "target": 14.97,
-     "shares": 3,
-     "cost": 36.21,
-     "risk": 4.35,
-     "reward": 8.7,
-     "stop_pct": 12.01,
-     "ticker": "STNE",
-     "sector": "Technology",
-     "name": "StoneCo Ltd."
-    },
-    {
-     "price": 11.06,
-     "change": 22.67,
-     "rvol": 3.34,
-     "entry": 11.2,
-     "stop": 9.86,
-     "target": 13.88,
-     "shares": 3,
-     "cost": 33.6,
-     "risk": 4.02,
-     "reward": 8.04,
-     "stop_pct": 11.96,
-     "ticker": "PAGS",
-     "sector": "Technology",
-     "name": "PagSeguro Digital Ltd."
-    }
-   ]
   }
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -4.2% vs its 50-day average"
+  "note": "Market weak: QQQ -5.3% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -404,10 +371,32 @@
    "market_ok": false,
    "status": "no_fill",
    "type": "pullback"
+  },
+  {
+   "ticker": "VTEX",
+   "date": "2026-11-13",
+   "entry": 4.0,
+   "stop": 3.77,
+   "target": 4.34,
+   "breakeven": 4.17,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
+  },
+  {
+   "ticker": "WLTH",
+   "date": "2026-11-13",
+   "entry": 10.78,
+   "stop": 10.15,
+   "target": 11.72,
+   "breakeven": 11.25,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
   }
  ],
  "scorecard": {
-  "alerts": 6,
+  "alerts": 8,
   "filled": 4,
   "closed": 4,
   "wins": 0,
@@ -415,7 +404,7 @@
   "avg_r": -0.59,
   "per_trade": -2.89,
   "open": 0,
-  "waiting": 0,
+  "waiting": 2,
   "by_type": {
    "pullback": {
     "closed": 4,
@@ -430,7 +419,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-12 16:53 ET",
+  "date": "2026-11-13 16:30 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
