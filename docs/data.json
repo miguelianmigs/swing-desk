@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-13 16:30 ET",
+ "updated": "2026-11-16 18:48 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-16 18:48 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-13 16:30 ET",
    "picks": []
@@ -239,48 +243,11 @@
   {
    "date": "2026-10-05 13:18 ET",
    "picks": []
-  },
-  {
-   "date": "2026-10-05 12:35 ET",
-   "picks": [
-    {
-     "price": 11.91,
-     "change": 24.68,
-     "rvol": 3.73,
-     "entry": 12.07,
-     "stop": 10.62,
-     "target": 14.97,
-     "shares": 3,
-     "cost": 36.21,
-     "risk": 4.35,
-     "reward": 8.7,
-     "stop_pct": 12.01,
-     "ticker": "STNE",
-     "sector": "Technology",
-     "name": "StoneCo Ltd."
-    },
-    {
-     "price": 11.1,
-     "change": 23.0,
-     "rvol": 3.44,
-     "entry": 11.2,
-     "stop": 9.86,
-     "target": 13.88,
-     "shares": 3,
-     "cost": 33.6,
-     "risk": 4.02,
-     "reward": 8.04,
-     "stop_pct": 11.96,
-     "ticker": "PAGS",
-     "sector": "Technology",
-     "name": "PagSeguro Digital Ltd."
-    }
-   ]
   }
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -5.3% vs its 50-day average"
+  "note": "Market weak: QQQ -7.7% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -380,8 +347,13 @@
    "target": 4.34,
    "breakeven": 4.17,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "loss",
+   "type": "pullback",
+   "fill": 4.0,
+   "filled": "2026-11-16",
+   "exit": 3.77,
+   "closed": "2026-11-16",
+   "r": -1.0
   },
   {
    "ticker": "WLTH",
@@ -391,23 +363,25 @@
    "target": 11.72,
    "breakeven": 11.25,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "open",
+   "type": "pullback",
+   "fill": 10.78,
+   "filled": "2026-11-16"
   }
  ],
  "scorecard": {
   "alerts": 8,
-  "filled": 4,
-  "closed": 4,
+  "filled": 6,
+  "closed": 5,
   "wins": 0,
   "win_rate": 0,
-  "avg_r": -0.59,
-  "per_trade": -2.89,
-  "open": 0,
-  "waiting": 2,
+  "avg_r": -0.68,
+  "per_trade": -3.29,
+  "open": 1,
+  "waiting": 0,
   "by_type": {
    "pullback": {
-    "closed": 4,
+    "closed": 5,
     "win_rate": 0
    }
   }
@@ -419,7 +393,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-13 16:30 ET",
+  "date": "2026-11-16 18:48 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
