@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-18 17:40 ET",
+ "updated": "2026-11-19 17:43 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-19 17:43 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-18 17:40 ET",
    "picks": []
@@ -239,15 +243,11 @@
   {
    "date": "2026-10-06 13:04 ET",
    "picks": []
-  },
-  {
-   "date": "2026-10-06 10:43 ET",
-   "picks": []
   }
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -7.7% vs its 50-day average"
+  "note": "Market weak: QQQ -9.5% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -387,20 +387,22 @@
    "target": 12.12,
    "breakeven": 11.63,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "open",
+   "type": "pullback",
+   "fill": 11.14,
+   "filled": "2026-11-19"
   }
  ],
  "scorecard": {
   "alerts": 10,
-  "filled": 6,
+  "filled": 7,
   "closed": 5,
   "wins": 0,
   "win_rate": 0,
   "avg_r": -0.68,
   "per_trade": -3.29,
-  "open": 1,
-  "waiting": 2,
+  "open": 2,
+  "waiting": 1,
   "by_type": {
    "pullback": {
     "closed": 5,
@@ -415,7 +417,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-18 17:40 ET",
+  "date": "2026-11-19 17:43 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
