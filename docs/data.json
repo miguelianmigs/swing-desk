@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-25 18:43 ET",
+ "updated": "2026-11-26 18:57 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-26 18:57 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-25 18:43 ET",
    "picks": []
@@ -239,10 +243,6 @@
   {
    "date": "2026-10-06 15:43 ET",
    "picks": []
-  },
-  {
-   "date": "2026-10-06 13:40 ET",
-   "picks": []
   }
  ],
  "market": {
@@ -410,10 +410,32 @@
    "exit": 11.98,
    "closed": "2026-11-25",
    "r": -1.0
+  },
+  {
+   "ticker": "QNST",
+   "date": "2026-11-26",
+   "entry": 18.94,
+   "stop": 17.89,
+   "target": 20.52,
+   "breakeven": 19.73,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
+  },
+  {
+   "ticker": "CARS",
+   "date": "2026-11-26",
+   "entry": 12.84,
+   "stop": 11.96,
+   "target": 14.16,
+   "breakeven": 13.5,
+   "market_ok": false,
+   "status": "waiting",
+   "type": "pullback"
   }
  ],
  "scorecard": {
-  "alerts": 11,
+  "alerts": 13,
   "filled": 8,
   "closed": 7,
   "wins": 0,
@@ -421,7 +443,7 @@
   "avg_r": -0.77,
   "per_trade": -3.74,
   "open": 1,
-  "waiting": 0,
+  "waiting": 2,
   "by_type": {
    "pullback": {
     "closed": 7,
@@ -436,7 +458,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-25 18:43 ET",
+  "date": "2026-11-26 18:57 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
