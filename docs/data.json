@@ -1,9 +1,13 @@
 {
- "updated": "2026-11-26 18:57 ET",
+ "updated": "2026-11-27 18:38 ET",
  "account": 243.0,
  "risk_pct": 2.0,
  "latest": [],
  "history": [
+  {
+   "date": "2026-11-27 18:38 ET",
+   "picks": []
+  },
   {
    "date": "2026-11-26 18:57 ET",
    "picks": []
@@ -239,15 +243,11 @@
   {
    "date": "2026-10-07 10:45 ET",
    "picks": []
-  },
-  {
-   "date": "2026-10-06 15:43 ET",
-   "picks": []
   }
  ],
  "market": {
   "ok": false,
-  "note": "Market weak: QQQ -10.3% vs its 50-day average"
+  "note": "Market weak: QQQ -7.8% vs its 50-day average"
  },
  "skipped": [],
  "tracked": [
@@ -419,8 +419,10 @@
    "target": 20.52,
    "breakeven": 19.73,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "open",
+   "type": "pullback",
+   "fill": 18.94,
+   "filled": "2026-11-27"
   },
   {
    "ticker": "CARS",
@@ -430,20 +432,22 @@
    "target": 14.16,
    "breakeven": 13.5,
    "market_ok": false,
-   "status": "waiting",
-   "type": "pullback"
+   "status": "open",
+   "type": "pullback",
+   "fill": 12.84,
+   "filled": "2026-11-27"
   }
  ],
  "scorecard": {
   "alerts": 13,
-  "filled": 8,
+  "filled": 10,
   "closed": 7,
   "wins": 0,
   "win_rate": 0,
   "avg_r": -0.77,
   "per_trade": -3.74,
-  "open": 1,
-  "waiting": 2,
+  "open": 3,
+  "waiting": 0,
   "by_type": {
    "pullback": {
     "closed": 7,
@@ -458,7 +462,7 @@
   "watch": []
  },
  "options": {
-  "date": "2026-11-26 18:57 ET",
+  "date": "2026-11-27 18:38 ET",
   "market_ok": false,
   "picks": [],
   "signals": 0,
